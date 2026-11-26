@@ -654,10 +654,16 @@ function noisePat(size, amax) {
 }
 const patGrass = noisePat(128, 38), patAsphalt = noisePat(128, 58), patRoof = noisePat(64, 32);
 function tree(x, y, r) {
-  ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.beginPath(); ctx.ellipse(x + r * .55, y + r * .7, r * 1.05, r * .9, 0, 0, TAU); ctx.fill();
-  const g = ['#2f6a35', '#3a7a3c', '#468a44', '#2b5f31'], R = rng(Math.floor(x * 7 + y * 13));
-  for (let k = 0; k < 5; k++) { const a = k / 5 * TAU + R(), d = r * .38 * R(), q = r * (.55 + R() * .25); ctx.fillStyle = g[k % 4]; ctx.beginPath(); ctx.arc(x + Math.cos(a) * d, y + Math.sin(a) * d, q, 0, TAU); ctx.fill(); }
-  ctx.fillStyle = 'rgba(190,225,120,.35)'; ctx.beginPath(); ctx.arc(x - r * .3, y - r * .35, r * .45, 0, TAU); ctx.fill();
+  const R = rng(Math.floor(x * 7 + y * 13)), greens = ['#244f32', '#2d6037', '#356c3d', '#3c7540', '#477e43'];
+  ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(x + r * .62, y + r * .82, r * 1.18, r * .82, -.18, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#66503a'; ctx.fillRect(x - r * .12, y + r * .12, r * .24, r * .78);
+  for (let k = 0; k < 11; k++) {
+    const a = k / 11 * TAU + R() * .38, d = r * (.12 + R() * .42), q = r * (.34 + R() * .25);
+    ctx.fillStyle = greens[Math.floor(R() * greens.length)];
+    ctx.beginPath(); ctx.ellipse(x + Math.cos(a) * d, y + Math.sin(a) * d * .82, q, q * (.72 + R() * .25), a * .25, 0, TAU); ctx.fill();
+  }
+  ctx.fillStyle = 'rgba(173,196,116,.24)'; ctx.beginPath(); ctx.ellipse(x - r * .28, y - r * .3, r * .34, r * .24, -.4, 0, TAU); ctx.fill();
+  ctx.strokeStyle = 'rgba(20,48,28,.28)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(x, y, r * .86, r * .7, 0, 0, TAU); ctx.stroke();
 }
 function treeOld(x, y, r) {
   ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.beginPath(); ctx.arc(x + 4, y + 5, r, 0, TAU); ctx.fill();
