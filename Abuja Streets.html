@@ -583,18 +583,21 @@ function updatePlayer(dt) {
     if (d < 700) near = true;
   }
   const sp = Math.hypot(P.vx, P.vy);
-  if (cops.some(c => !c.leave && Math.hypot(c.x - P.x, c.y - P.y) < 55) && sp < 100) bustT += dt; else bustT = Math.max(0, bustT - dt * 2);
+  // Arrest pressure builds only when an officer is genuinely on top of a slow vehicle.
+  const arrestOfficer = cops.some(c => !c.leave && Math.hypot(c.x - P.x, c.y - P.y) < 72);
+  if (arrestOfficer && sp < 115) bustT += dt;
+  else bustT = Math.max(0, bustT - dt * 1.6);
   if (bustT > 2.2 && heat > 0) {
     const fine = Math.min(cash, 500 + Math.round(cash * .1)); cash -= fine; heat = 0; bustT = 0;
     toast('Busted  −' + fmt(fine), 'bad');
   }
-  // Officers within visual pursuit range must keep the chase alive.
-  const closeOfficer = cops.some(c => Math.hypot(c.x - P.x, c.y - P.y) < 700);
+  // Keep a chase active while any pursuing officer remains in the wider response area.
+  const closeOfficer = cops.some(c => Math.hypot(c.x - P.x, c.y - P.y) < 950);
   if (heat > 0 && closeOfficer) {
-    for (const c of cops) if (Math.hypot(c.x - P.x, c.y - P.y) < 700) c.leave = false;
+    for (const c of cops) if (Math.hypot(c.x - P.x, c.y - P.y) < 950) c.leave = false;
   }
   const activePursuit = cops.some(c => !c.leave);
-  const heatDecay = activePursuit ? (closeOfficer ? 0 : .004) : .06;
+  const heatDecay = activePursuit ? (closeOfficer ? 0 : .003) : .06;
   heat = Math.max(0, heat - heatDecay * dt);
   const stars = Math.ceil(heat - .001);
   if (stars > prevStars && prevStars === 0) toast('Police are after you', 'bad');
@@ -1030,7 +1033,7 @@ function hud() {
   el.spd.textContent = Math.round(Math.hypot(P.vx, P.vy) * .36);  const st = Math.ceil(heat - .001);
   el.nitrof.style.width = nitro.toFixed(1) + '%'; el.nitrotxt.textContent = Math.round(nitro) + '%'; el.nitro.classList.toggle('active', boosting);
   [...el.stars.children].forEach((s, i) => s.classList.toggle('on', i < st));
-  el.stars.classList.toggle('hot', st > 0 && cops.some(c => Math.hypot(c.x - P.x, c.y - P.y) < 450));
+  el.stars.classList.toggle('hot', st > 0 && cops.some(c => Math.hypot(c.x - P.x, c.y - P.y) < 950));
   el.bust.style.display = bustT > 0 ? 'block' : 'none'; el.bustf.style.width = clamp(bustT / 2.2, 0, 1) * 100 + '%';
   let h;
   if (!running) h = '<small>Get ready</small>Press start to take your first fare.';
