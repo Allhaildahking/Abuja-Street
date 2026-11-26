@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Abuja Streets | FCT Open City</title><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Abuja Streets | Explore the FCT</title><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600&family=Barlow+Condensed:wght@600;700&display=swap">
 <style>
 /* Layout: full-bleed top-down canvas, HUD panels over it (cash/mission left, minimap right), touch pads at the bottom. One committed dark HUD look over a sun-baked city map. */
@@ -192,13 +192,38 @@ const DISTRICTS = [
 const INSET = { rock: 30, water: 6, mosque: 46, church: 46, market: 22, tower: 64, stadium: 34 };
 const ROOFS = ['#cfc8b8', '#b9b2a2', '#d9d2c1', '#a9b4b8', '#c4a88a', '#b7c2b0', '#9fa9b3', '#d8c9a8', '#c7b5a0'];
 const AWN = ['#e4572e', '#f3a712', '#29a0b1', '#6a994e', '#a24ba0', '#f2efe6'];
+/* Each district gets its own building language and street density.
+   This is a designed Abuja-inspired layout, not a claim of street-level GPS accuracy. */
+const DISTRICT_STYLE = [
+  { name: 'MAITAMA', bx: 8, by: 1, density: .82, floors: 1.2, roofs: ['#d8d1c2', '#c8c0ad', '#b9c4c0', '#d9c9ad'] },
+  { name: 'JABI', bx: 11, by: 2, density: .88, floors: 1.05, roofs: ['#c9c8bc', '#b9c5bd', '#d5c8b2', '#aeb9b8'] },
+  { name: 'CENTRAL AREA', bx: 5, by: 3, density: 1.0, floors: 2.0, roofs: ['#aeb8bd', '#c0c5c4', '#b2b5b2', '#d0c6b6'] },
+  { name: 'WUSE', bx: 9, by: 5, density: 1.22, floors: 1.15, roofs: ['#c6ad8b', '#b99c78', '#d4c1a0', '#a9b4a1'] },
+  { name: 'UTAKO', bx: 11, by: 7, density: 1.12, floors: 1.0, roofs: ['#c9bda6', '#b8b3a3', '#d4c6a8', '#aab7ac'] },
+  { name: 'GARKI', bx: 2, by: 8, density: 1.18, floors: 1.15, roofs: ['#c1a889', '#b8a080', '#d0b995', '#aeb5a8'] },
+  { name: 'ASOKORO', bx: 6, by: 9, density: .72, floors: 1.0, roofs: ['#d4cbb8', '#c2c6b7', '#d8d0bd', '#b6c1b7'] },
+  { name: 'APO', bx: 8, by: 11, density: .92, floors: .85, roofs: ['#c9b69a', '#b8aa92', '#d2c5aa', '#aeb8a8'] },
+  { name: 'GUZAPE', bx: 7, by: 13, density: .68, floors: 1.05, roofs: ['#d6cbb8', '#c5c2b1', '#b6c2b9', '#d9c9ac'] },
+  { name: 'GUDU', bx: 4, by: 13, density: 1.02, floors: .9, roofs: ['#c8b394', '#b7a486', '#d1c0a2', '#aeb6a5'] },
+  { name: 'KUBWA', bx: 13, by: 9, density: .96, floors: .9, roofs: ['#c6b69d', '#b8ad99', '#d0c3aa', '#aab5a8'] },
+  { name: 'GWARINPA', bx: 12, by: 3, density: .86, floors: 1.0, roofs: ['#d0c6b2', '#bfc2b2', '#c9b69b', '#aab9b0'] },
+  { name: 'LOKOGOMA', bx: 2, by: 13, density: .78, floors: .8, roofs: ['#cbb99e', '#b8ad98', '#d4c5aa', '#b2bca9'] }
+];
+function districtForBlock(bx, by) {
+  let best = DISTRICT_STYLE[0], score = Infinity;
+  for (const d of DISTRICT_STYLE) {
+    const dx = (bx - d.bx) * 1.08, dy = by - d.by, v = dx * dx + dy * dy;
+    if (v < score) { score = v; best = d; }
+  }
+  return best;
+}
 const blocks = [];
 const lmAt = {};
 LM.forEach(l => lmAt[l.by * N + l.bx] = l);
 
 for (let by = 0; by < N; by++) for (let bx = 0; bx < N; bx++) {
-  const R = rng(bx * 97 + by * 13 + 7);
-  const b = { bx, by, x0: bx * G + HALF, y0: by * G + HALF, solids: [], blds: [], trees: [], lm: lmAt[by * N + bx] || null, open: false };
+  const R = rng(bx * 97 + by * 13 + 7), district = districtForBlock(bx, by);
+  const b = { bx, by, district, x0: bx * G + HALF, y0: by * G + HALF, solids: [], blds: [], trees: [], lm: lmAt[by * N + bx] || null, open: false };
   const l = b.lm;
   if (l) {
     const i = INSET[l.kind];
@@ -210,19 +235,22 @@ for (let by = 0; by < N; by++) for (let bx = 0; bx < N; bx++) {
     }
     if (l.kind === 'park') for (let k = 0; k < 16; k++) b.trees.push({ x: b.x0 + 24 + R() * (S - 48), y: b.y0 + 24 + R() * (S - 48), r: 10 + R() * 8 });
     if (l.kind === 'rock') for (let k = 0; k < 10; k++) { const a = R() * TAU, r = S / 2 - 12 + R() * 6; b.trees.push({ x: b.x0 + S / 2 + Math.cos(a) * r, y: b.y0 + S / 2 + Math.sin(a) * r, r: 8 + R() * 6 }); }
-  } else if (R() < .14) {
+  } else if (R() < (district.density < .8 ? .22 : district.density > 1.15 ? .07 : .14)) {
     b.open = true;
     for (let k = 0; k < 9; k++) b.trees.push({ x: b.x0 + 20 + R() * (S - 40), y: b.y0 + 20 + R() * (S - 40), r: 9 + R() * 8 });
   } else {
-    const cols = R() < .5 ? 1 : 2, rows = R() < .5 ? 1 : 2, cw = (S - 28) / cols, ch = (S - 28) / rows;
+    const dense = district.density > 1.1;
+    const cols = dense ? (R() < .72 ? 2 : 1) : (R() < .5 ? 1 : 2);
+    const rows = dense ? (R() < .72 ? 2 : 1) : (R() < .5 ? 1 : 2);
+    const cw = (S - 28) / cols, ch = (S - 28) / rows;
     for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
       if (R() < .12) { b.trees.push({ x: b.x0 + 14 + c * cw + cw / 2, y: b.y0 + 14 + r * ch + ch / 2, r: 12 + R() * 6 }); continue; }
       const pad = 4 + R() * 12, w = cw - pad * 2, h = ch - pad * 2;
       const x = b.x0 + 14 + c * cw + pad, y = b.y0 + 14 + r * ch + pad;
-      const roof = pick(ROOFS), ht = 6 + R() * 12;
+      const roof = pick(district.roofs), ht = (6 + R() * 12) * district.floors;
       const det = [];
       for (let k = 0; k < 2; k++) det.push({ x: 6 + R() * Math.max(4, w - 26), y: 6 + R() * Math.max(4, h - 22), w: 12 + R() * 8, h: 10 + R() * 6, c: 'rgba(0,0,0,.14)' });
-      b.blds.push({ x, y, w, h, roof, wall: shade(roof, -55), ht, det });
+      b.blds.push({ x, y, w, h, roof, wall: shade(roof, -55), ht, det, district: district.name });
       b.solids.push({ x, y, w, h });
     }
   }
