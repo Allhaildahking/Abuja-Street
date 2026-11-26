@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Abuja Streets | Explore the FCT</title><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Abuja Streets | Explore the FCT</title><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body><a href="./3d/" style="position:fixed;z-index:99999;right:16px;top:16px;padding:11px 15px;border-radius:10px;background:#173d35;color:#9df0d6;border:1px solid #5bd3b0;text-decoration:none;font:700 12px system-ui;letter-spacing:.08em">ENTER 3D ABUJA ↗</a>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600&family=Barlow+Condensed:wght@600;700&display=swap">
 <style>
 /* Layout: full-bleed top-down canvas, HUD panels over it (cash/mission left, minimap right), touch pads at the bottom. One committed dark HUD look over a sun-baked city map. */
@@ -588,9 +588,13 @@ function updatePlayer(dt) {
     const fine = Math.min(cash, 500 + Math.round(cash * .1)); cash -= fine; heat = 0; bustT = 0;
     toast('Busted  −' + fmt(fine), 'bad');
   }
-  // Keep a wanted level alive while an active police pursuit is underway.
+  // Officers within visual pursuit range must keep the chase alive.
+  const closeOfficer = cops.some(c => Math.hypot(c.x - P.x, c.y - P.y) < 700);
+  if (heat > 0 && closeOfficer) {
+    for (const c of cops) if (Math.hypot(c.x - P.x, c.y - P.y) < 700) c.leave = false;
+  }
   const activePursuit = cops.some(c => !c.leave);
-  const heatDecay = activePursuit ? (near ? .0005 : .008) : .06;
+  const heatDecay = activePursuit ? (closeOfficer ? 0 : .004) : .06;
   heat = Math.max(0, heat - heatDecay * dt);
   const stars = Math.ceil(heat - .001);
   if (stars > prevStars && prevStars === 0) toast('Police are after you', 'bad');
