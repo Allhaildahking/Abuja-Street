@@ -268,7 +268,7 @@ const traffic = [], cops = [], marks = [], parts = [];
 const keys = {}, touch = {}, steerPad = { active: false, v: 0 };
 let autoGas = false;
 const buzz = ms => { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (_) { } };
-let time = 0, tod = 9.5, shake = 0, muted = false, running = false, heat = 0, cash = 5000, mission = null, nextAt = 0, bustT = 0, copTimer = 0, prevStars = 0;
+let time = 0, tod = 9.5, shake = 0, muted = false, running = false, heat = 0, cash = 5000, mission = null, nextAt = 0, bustT = 0, copTimer = 0, prevStars = 0, driftT = 0, driftPeak = 0;
 const cam = { x: P.x, y: P.y, z: 1 };
 
 function stepCar(c, thr, str, hb, dt) {
@@ -470,7 +470,7 @@ function drawPeds(vx0, vx1, vy0, vy1) {
 function damage(v) { if (running) P.hp = Math.max(0, P.hp - v); }
 function wreck() {
   const fine = Math.min(cash, 1000); cash -= fine; toast('Wrecked  −' + fmt(fine), 'bad');
-  P.x = clamp(Math.round(P.x / G), 0, N) * G; P.y = clamp(Math.round(P.y / G), 0, N) * G; P.vx = P.vy = 0; P.hp = 100; P.steer = 0; heat = 0; bustT = 0;
+  P.x = clamp(Math.round(P.x / G), 0, N) * G; P.y = clamp(Math.round(P.y / G), 0, N) * G; P.vx = P.vy = 0; P.hp = 100; P.steer = 0; heat = 0; bustT = 0; driftT = 0; driftPeak = 0;
   buzz(200); thud(1);
 }
 function smokeHood() {
@@ -534,6 +534,14 @@ function updatePlayer(dt) {
   const sr = (tstr === 0 ? rate * 1.5 : rate) * dt;
   P.steer = (P.steer || 0) + clamp(tstr - (P.steer || 0), -sr, sr);
   stepCar(P, thr, P.steer, hb, dt);
+  const driftSpeed = Math.abs(P.vF);
+  if (hb && driftSpeed > 150 && Math.abs(P.steer) > .25) {
+    driftT += dt; driftPeak = Math.max(driftPeak, driftSpeed);
+  } else if (driftT > .65) {
+    const bonus = Math.min(1500, Math.round((driftT * driftPeak * .65) / 50) * 50);
+    if (bonus >= 100) { cash += bonus; toast('Drift bonus  +' + fmt(bonus), 'good'); }
+    driftT = 0; driftPeak = 0;
+  } else { driftT = 0; driftPeak = 0; }
   P.thr = thr; P.brake = (thr < 0 && P.vF > 20) || hb;
   const imp = collideWalls(P);
   if (imp > 120) { burst(P.x, P.y, 6, '#ffd27a', 140); buzz(30); thud(clamp(imp / 400, .2, 1)); shake = Math.max(shake, clamp(imp / 500, 0, 1)); }
