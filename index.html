@@ -561,7 +561,10 @@ function updatePlayer(dt) {
     const fine = Math.min(cash, 500 + Math.round(cash * .1)); cash -= fine; heat = 0; bustT = 0;
     toast('Busted  −' + fmt(fine), 'bad');
   }
-  heat = Math.max(0, heat - (near ? .03 : .22) * dt);
+  // Keep a wanted level alive while an active police pursuit is underway.
+  const activePursuit = cops.some(c => !c.leave);
+  const heatDecay = activePursuit ? (near ? .008 : .018) : .06;
+  heat = Math.max(0, heat - heatDecay * dt);
   const stars = Math.ceil(heat - .001);
   if (stars > prevStars && prevStars === 0) toast('Police are after you', 'bad');
   if (stars === 0 && prevStars > 0) toast('You lost them', 'good');
