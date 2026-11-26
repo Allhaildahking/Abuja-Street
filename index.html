@@ -652,7 +652,7 @@ function noisePat(size, amax) {
   for (let i = 0; i < id.data.length; i += 4) { const v = Math.random() > .5 ? 255 : 0; id.data[i] = id.data[i + 1] = id.data[i + 2] = v; id.data[i + 3] = Math.random() * amax; }
   x.putImageData(id, 0, 0); return ctx.createPattern(c, 'repeat');
 }
-const patGrass = noisePat(128, 30), patAsphalt = noisePat(128, 42), patRoof = noisePat(64, 24);
+const patGrass = noisePat(128, 38), patAsphalt = noisePat(128, 58), patRoof = noisePat(64, 32);
 function tree(x, y, r) {
   ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.beginPath(); ctx.ellipse(x + r * .55, y + r * .7, r * 1.05, r * .9, 0, 0, TAU); ctx.fill();
   const g = ['#2f6a35', '#3a7a3c', '#468a44', '#2b5f31'], R = rng(Math.floor(x * 7 + y * 13));
@@ -674,6 +674,22 @@ function drawBld(b) {
   ctx.fillStyle = patRoof; ctx.fillRect(rx, ry, b.w, b.h);
   ctx.strokeStyle = 'rgba(255,255,255,.38)'; ctx.lineWidth = 2; ctx.strokeRect(rx + 1, ry + 1, b.w - 2, b.h - 2);
   ctx.strokeStyle = 'rgba(0,0,0,.28)'; ctx.lineWidth = 1; ctx.strokeRect(rx + 4, ry + 4, b.w - 8, b.h - 8);
+  /* Rooftop detail: parapets, service units, skylights and water tanks. */
+  ctx.fillStyle = 'rgba(255,255,255,.22)'; ctx.fillRect(rx + 3, ry + 3, b.w - 6, 2);
+  ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.fillRect(rx + 3, ry + b.h - 5, b.w - 6, 2);
+  const R = rng(Math.floor(b.x * 3 + b.y * 11 + b.w * 7));
+  for (let n = 0; n < Math.max(2, Math.floor((b.w * b.h) / 1900)); n++) {
+    const ux = rx + 8 + R() * Math.max(2, b.w - 26), uy = ry + 8 + R() * Math.max(2, b.h - 22), uw = 8 + R() * 11, uh = 7 + R() * 9;
+    ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.fillRect(ux + 2, uy + 3, uw, uh);
+    ctx.fillStyle = R() > .5 ? '#777e7d' : '#a4aaa5'; ctx.fillRect(ux, uy, uw, uh);
+    ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fillRect(ux + 1, uy + 1, uw - 2, 1.5);
+  }
+  if (b.w > 60 && b.h > 55) {
+    const tx = rx + b.w * (.25 + R() * .5), ty = ry + b.h * (.25 + R() * .5);
+    ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(tx + 3, ty + 4, 8, 6, 0, 0, TAU); ctx.fill();
+    ctx.fillStyle = '#777e78'; ctx.beginPath(); ctx.ellipse(tx, ty, 8, 6, 0, 0, TAU); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.3)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(tx, ty, 5, 3, 0, 0, TAU); ctx.stroke();
+  }
   for (const d of b.det) {
     ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.fillRect(rx + d.x + 2, ry + d.y + 3, d.w, d.h);
     ctx.fillStyle = '#9ea3a6'; ctx.fillRect(rx + d.x, ry + d.y, d.w, d.h); ctx.fillStyle = '#c9cdcf'; ctx.fillRect(rx + d.x, ry + d.y, d.w, 2);
@@ -903,6 +919,41 @@ function drawCarOld(x, y, a, o) {
   ctx.restore();
 }
 
+
+/* Deterministic road wear: asphalt repairs, tyre polish, cracks and utility covers. */
+function drawRoadWear(i0, i1, j0, j1) {
+  for (let i = i0; i <= i1; i++) for (let j = j0; j < j1; j++) {
+    const R = rng(i * 7919 + j * 104729 + 31), x = i * G, y = j * G + HALF;
+    for (let n = 0; n < 4; n++) {
+      const px = x + (R() - .5) * 38, py = y + 22 + R() * (G - 44), w = 5 + R() * 13, h = 8 + R() * 22;
+      ctx.fillStyle = R() > .5 ? 'rgba(8,10,12,.12)' : 'rgba(190,184,164,.07)';
+      ctx.beginPath(); ctx.ellipse(px, py, w, h, R() * .3, 0, TAU); ctx.fill();
+    }
+    if (R() > .45) {
+      const mx = x + (R() > .5 ? -LANE : LANE), my = y + 50 + R() * (G - 100);
+      ctx.fillStyle = 'rgba(0,0,0,.32)'; ctx.beginPath(); ctx.arc(mx, my, 6, 0, TAU); ctx.fill();
+      ctx.strokeStyle = 'rgba(190,194,188,.28)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(mx, my, 4, 0, TAU); ctx.stroke();
+    }
+    if (R() > .55) {
+      const cx = x + (R() - .5) * 44, cy = y + 35 + R() * (G - 70);
+      ctx.strokeStyle = 'rgba(12,14,16,.42)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + 5, cy + 8); ctx.lineTo(cx + 2, cy + 15); ctx.lineTo(cx + 9, cy + 22); ctx.stroke();
+    }
+  }
+  for (let j = j0; j <= j1; j++) for (let i = i0; i < i1; i++) {
+    const R = rng(j * 6151 + i * 99991 + 73), x = i * G + HALF, y = j * G;
+    for (let n = 0; n < 4; n++) {
+      const px = x + 22 + R() * (G - 44), py = y + (R() - .5) * 38, w = 5 + R() * 13, h = 8 + R() * 22;
+      ctx.fillStyle = R() > .5 ? 'rgba(8,10,12,.12)' : 'rgba(190,184,164,.07)';
+      ctx.beginPath(); ctx.ellipse(px, py, h, w, R() * .3, 0, TAU); ctx.fill();
+    }
+    if (R() > .5) {
+      const mx = x + 50 + R() * (G - 100), my = y + (R() > .5 ? -LANE : LANE);
+      ctx.fillStyle = 'rgba(0,0,0,.32)'; ctx.beginPath(); ctx.arc(mx, my, 6, 0, TAU); ctx.fill();
+      ctx.strokeStyle = 'rgba(190,194,188,.28)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(mx, my, 4, 0, TAU); ctx.stroke();
+    }
+  }
+}
+
 function drawWorld() {
   const z = cam.z, vx0 = cam.x - W / 2 / z - 60, vx1 = cam.x + W / 2 / z + 60, vy0 = cam.y - H / 2 / z - 60, vy1 = cam.y + H / 2 / z + 60;
   const shx = (Math.random() - .5) * shake * 14, shy = (Math.random() - .5) * shake * 14;
@@ -923,6 +974,7 @@ function drawWorld() {
   ctx.fillStyle = patAsphalt;
   for (let i = i0; i <= i1; i++) ctx.fillRect(i * G - HALF, ext0, ROAD, ext);
   for (let j = j0; j <= j1; j++) ctx.fillRect(ext0, j * G - HALF, ext, ROAD);
+  drawRoadWear(i0, i1, j0, j1);
   ctx.fillStyle = 'rgba(0,0,0,.1)';                  /* worn wheel tracks in each lane */
   for (let i = i0; i <= i1; i++) for (const s of [-LANE, LANE]) for (const f of [-8, 8]) ctx.fillRect(i * G + s + f - 3, ext0, 6, ext);
   for (let j = j0; j <= j1; j++) for (const s of [-LANE, LANE]) for (const f of [-8, 8]) ctx.fillRect(ext0, j * G + s + f - 3, ext, 6);
