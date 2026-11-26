@@ -1,5 +1,4 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>Abuja Streets</title>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Abuja Streets | FCT Open City</title><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600&family=Barlow+Condensed:wght@600;700&display=swap">
 <style>
 /* Layout: full-bleed top-down canvas, HUD panels over it (cash/mission left, minimap right), touch pads at the bottom. One committed dark HUD look over a sun-baked city map. */
@@ -108,7 +107,7 @@ h1 em{font-style:normal;color:var(--green)}
     <div class="card">
       <div class="flag"><i></i><i></i><i></i></div>
       <h1>Abuja <em>Streets</em></h1>
-      <p>Drive a white and green cab through the capital. Pick up passengers at Wuse Market, the National Mosque, Millennium Park and more, get them there before time runs out, and keep clear of the police.</p>
+      <p>Welcome to the FCT. Explore a growing open city inspired by Abuja: from the high-rises of Maitama and the busy streets of Wuse to Garki, Jabi, Gwarinpa and the hills beyond. Take jobs, earn cash, build your name and watch the city come alive after dark.</p>
       <div class="keys">
         <b>Phone</b><span>Slide the knob to steer, smoothly. Gas and brake on the right. Turn on Auto gas to keep rolling.</span>
         <b>Keyboard</b><span>WASD or arrows. Space drifts. N skips a fare.</span>
@@ -128,7 +127,7 @@ const cv = $('cv'), ctx = cv.getContext('2d');
 const mm = $('mm'), mctx = mm.getContext('2d');
 
 /* ---------- constants ---------- */
-const G = 420, N = 10, ROAD = 96, HALF = ROAD / 2, WORLD = N * G, S = G - ROAD, LANE = 20;
+const G = 420, N = 14, ROAD = 96, HALF = ROAD / 2, WORLD = N * G, S = G - ROAD, LANE = 20;
 const TAU = Math.PI * 2;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const pick = a => a[Math.floor(Math.random() * a.length)];
@@ -165,7 +164,30 @@ const LM = [
   { name: 'Ceddi Plaza', kind: 'twin', bx: 6, by: 3, go: 1 },
   { name: 'Wuse Market', kind: 'market', bx: 7, by: 2, go: 1 },
   { name: 'Millennium Park', kind: 'park', bx: 7, by: 5, go: 1 },
-  { name: 'Moshood Abiola Stadium', kind: 'stadium', bx: 2, by: 6, go: 1 }
+  { name: 'Moshood Abiola Stadium', kind: 'stadium', bx: 2, by: 6, go: 1 },
+  { name: 'Jabi Lake Mall', kind: 'twin', bx: 10, by: 1, go: 1 },
+  { name: 'Maitama District', kind: 'tower', bx: 8, by: 3, go: 1 },
+  { name: 'Wuse Zone 2', kind: 'market', bx: 9, by: 6, go: 1 },
+  { name: 'Gwarinpa Estate', kind: 'park', bx: 12, by: 4, go: 1 },
+  { name: 'Utako Motor Park', kind: 'market', bx: 11, by: 8, go: 1 },
+  { name: 'National Assembly', kind: 'twin', bx: 5, by: 9, go: 1 },
+  { name: 'Garki Model Market', kind: 'market', bx: 2, by: 9, go: 1 },
+  { name: 'Area 1 Shopping Centre', kind: 'plaza', bx: 1, by: 11, go: 1 },
+  { name: 'Gudu Market', kind: 'market', bx: 4, by: 12, go: 1 },
+  { name: 'Apo Resettlement', kind: 'market', bx: 8, by: 10, go: 1 },
+  { name: 'Guzape Hills', kind: 'rock', bx: 7, by: 12, go: 1 },
+  { name: 'Kubwa Town Centre', kind: 'market', bx: 13, by: 10, go: 1 },
+  { name: 'Aso Villa District', kind: 'tower', bx: 10, by: 12, go: 1 },
+  { name: 'Kado Fish Market', kind: 'market', bx: 12, by: 7, go: 1 },
+  { name: 'Lokogoma', kind: 'park', bx: 2, by: 13, go: 1 }
+];
+const DISTRICTS = [
+  { name: 'MAITAMA', bx: 8, by: 1 }, { name: 'JABI', bx: 11, by: 2 },
+  { name: 'CENTRAL AREA', bx: 5, by: 3 }, { name: 'WUSE', bx: 9, by: 5 },
+  { name: 'UTAKO', bx: 11, by: 7 }, { name: 'GARKI', bx: 2, by: 8 },
+  { name: 'ASOKORO', bx: 6, by: 9 }, { name: 'APO', bx: 8, by: 11 },
+  { name: 'GUZAPE', bx: 7, by: 13 }, { name: 'GUDU', bx: 4, by: 13 },
+  { name: 'KUBWA', bx: 13, by: 9 }, { name: 'GWARINPA', bx: 12, by: 3 }
 ];
 const INSET = { rock: 30, water: 6, mosque: 46, church: 46, market: 22, tower: 64, stadium: 34 };
 const ROOFS = ['#cfc8b8', '#b9b2a2', '#d9d2c1', '#a9b4b8', '#c4a88a', '#b7c2b0', '#9fa9b3', '#d8c9a8', '#c7b5a0'];
@@ -880,6 +902,15 @@ function drawWorld() {
     const cx = l.bx * G + G / 2, cy = l.by * G + G / 2; if (cx < vx0 - 100 || cx > vx1 + 100 || cy < vy0 - 100 || cy > vy1 + 100) continue;
     ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.strokeText(l.name.toUpperCase(), cx, cy - S / 2 + 6);
     ctx.fillStyle = '#17201b'; ctx.fillText(l.name.toUpperCase(), cx, cy - S / 2 + 6);
+  }
+  /* Abuja district markers: compact road plaques, not imported city labels. */
+  ctx.font = '700 11px "Barlow Condensed","Arial Narrow",sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (const d of DISTRICTS) {
+    const dx = d.bx * G, dy = d.by * G;
+    if (dx < vx0 - 90 || dx > vx1 + 90 || dy < vy0 - 30 || dy > vy1 + 30) continue;
+    ctx.fillStyle = 'rgba(10,18,15,.78)'; ctx.fillRect(dx - 46, dy - 10, 92, 20);
+    ctx.strokeStyle = 'rgba(224,190,112,.75)'; ctx.lineWidth = 1.5; ctx.strokeRect(dx - 46, dy - 10, 92, 20);
+    ctx.fillStyle = '#f2d69a'; ctx.fillText(d.name, dx, dy + .5);
   }
   if (mission) {
     const t = stop(mission.stage === 'pickup' ? mission.a : mission.b), col = mission.stage === 'pickup' ? '#ffd23f' : '#2fe38a', pul = 1 + Math.sin(time * 5) * .12;
