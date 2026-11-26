@@ -542,8 +542,8 @@ function updatePlayer(dt) {
     const hit = carHit(P, c, true);
     if (hit > 40) {
       c.stun = 1.4; c.speed = 0;
-      if (hit > 140 && c.hitT <= 0) {
-        c.hitT = 1.5; heat = Math.min(5, heat + .55);
+      if (hit > 65 && c.hitT <= 0) {
+        c.hitT = 2.2; heat = Math.min(5, heat + 1);
         if (mission && mission.stage === 'dropoff') mission.bumps++;
         burst(P.x, P.y, 8, '#ffd27a', 160); buzz(50); thud(clamp(hit / 350, .3, 1)); shake = Math.max(shake, clamp(hit / 450, 0, 1));
       }
