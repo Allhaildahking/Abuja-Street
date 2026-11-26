@@ -719,8 +719,23 @@ function drawBldOld(b) {
 }
 const GROUND = { rock: '#bdb48f', water: '#d9c88f', plaza: '#e4dcc6', fountain: '#e4dcc6', park: '#7fa85b', market: '#b89f78', mosque: '#d8d1b8', church: '#d8d1b8', tower: '#cfc6aa', twin: '#cfc6aa', stadium: '#cfc6aa' };
 function drawBlockGround(b) {
-  ctx.fillStyle = b.lm ? GROUND[b.lm.kind] : b.open ? '#8fae6a' : '#bdb48f';
+  const base = b.lm ? GROUND[b.lm.kind] : b.open ? '#82986a' : '#aaa18b';
+  ctx.fillStyle = base;
   ctx.fillRect(b.x0, b.y0, S, S);
+  /* Subtle deterministic ground variation: dry soil, concrete wear and grass patches. */
+  const R = rng(Math.floor(b.x0 * 13 + b.y0 * 29 + 407));
+  for (let n = 0; n < 34; n++) {
+    const x = b.x0 + 8 + R() * (S - 16), y = b.y0 + 8 + R() * (S - 16);
+    const rx = 3 + R() * 15, ry = 2 + R() * 8;
+    ctx.fillStyle = b.open
+      ? (R() > .5 ? 'rgba(35,75,39,.12)' : 'rgba(198,184,130,.13)')
+      : (R() > .5 ? 'rgba(48,43,35,.08)' : 'rgba(239,225,191,.09)');
+    ctx.beginPath(); ctx.ellipse(x, y, rx, ry, R() * 3, 0, TAU); ctx.fill();
+  }
+  if (!b.lm && !b.open) {
+    ctx.strokeStyle = 'rgba(72,65,52,.18)'; ctx.lineWidth = 1;
+    ctx.strokeRect(b.x0 + 5, b.y0 + 5, S - 10, S - 10);
+  }
 }
 function drawBlockObjects(b) {
   const l = b.lm, x0 = b.x0, y0 = b.y0, cx = x0 + S / 2, cy = y0 + S / 2;
@@ -1002,9 +1017,36 @@ function drawWorld() {
   const i0 = clamp(Math.floor(vx0 / G), 0, N), i1 = clamp(Math.ceil(vx1 / G), 0, N), j0 = clamp(Math.floor(vy0 / G), 0, N), j1 = clamp(Math.ceil(vy1 / G), 0, N);
   ctx.fillStyle = patGrass; ctx.fillRect(vx0, vy0, vx1 - vx0, vy1 - vy0);
   const ext0 = -HALF, ext = WORLD + ROAD;
-  ctx.fillStyle = '#ddd7c4';
-  for (let i = i0; i <= i1; i++) ctx.fillRect(i * G - HALF - 9, ext0, ROAD + 18, ext);
-  for (let j = j0; j <= j1; j++) ctx.fillRect(ext0, j * G - HALF - 9, ext, ROAD + 18);
+  /* Broad concrete sidewalks with a raised, two-tone curb. */
+  ctx.fillStyle = '#b9b6aa';
+  for (let i = i0; i <= i1; i++) ctx.fillRect(i * G - HALF - 18, ext0, ROAD + 36, ext);
+  for (let j = j0; j <= j1; j++) ctx.fillRect(ext0, j * G - HALF - 18, ext, ROAD + 36);
+  ctx.fillStyle = '#d0cbbd';
+  for (let i = i0; i <= i1; i++) {
+    ctx.fillRect(i * G - HALF - 17, ext0, 15, ext);
+    ctx.fillRect(i * G + HALF + 2, ext0, 15, ext);
+  }
+  for (let j = j0; j <= j1; j++) {
+    ctx.fillRect(ext0, j * G - HALF - 17, ext, 15);
+    ctx.fillRect(ext0, j * G + HALF + 2, ext, 15);
+  }
+  /* Repeating slab joints make the pavement read as constructed concrete. */
+  ctx.strokeStyle = 'rgba(75,75,69,.22)'; ctx.lineWidth = 1; ctx.setLineDash([]);
+  for (let i = i0; i <= i1; i++) for (let y = Math.floor(vy0 / 24) * 24; y < vy1; y += 24) {
+    const x = i * G - HALF - 18;
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 32, y); ctx.moveTo(x + ROAD + 4, y); ctx.lineTo(x + ROAD + 36, y); ctx.stroke();
+  }
+  for (let j = j0; j <= j1; j++) for (let x = Math.floor(vx0 / 24) * 24; x < vx1; x += 24) {
+    const y = j * G - HALF - 18;
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + 32); ctx.moveTo(x, y + ROAD + 4); ctx.lineTo(x, y + ROAD + 36); ctx.stroke();
+  }
+  ctx.strokeStyle = 'rgba(245,241,225,.78)'; ctx.lineWidth = 2;
+  for (let i = i0; i <= i1; i++) for (const edge of [-HALF - 2, HALF + 2]) {
+    ctx.beginPath(); ctx.moveTo(i * G + edge, ext0); ctx.lineTo(i * G + edge, WORLD + HALF); ctx.stroke();
+  }
+  for (let j = j0; j <= j1; j++) for (const edge of [-HALF - 2, HALF + 2]) {
+    ctx.beginPath(); ctx.moveTo(ext0, j * G + edge); ctx.lineTo(WORLD + HALF, j * G + edge); ctx.stroke();
+  }
   ctx.fillStyle = '#3a3e43';
   for (let i = i0; i <= i1; i++) ctx.fillRect(i * G - HALF, ext0, ROAD, ext);
   for (let j = j0; j <= j1; j++) ctx.fillRect(ext0, j * G - HALF, ext, ROAD);
