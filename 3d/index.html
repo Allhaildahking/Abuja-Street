@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Abuja Streets 3D | FCT Open World</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#080d12;color:#eef3f5;font:14px Inter,system-ui,Arial;overflow:hidden}canvas{display:block}#game{position:fixed;inset:0}#hud{position:fixed;inset:0;pointer-events:none;padding:18px;display:flex;justify-content:space-between;align-items:flex-start;background:linear-gradient(180deg,#05090dbb,transparent 23%,transparent 76%,#05090d99)}.panel{background:#0b1219d9;border:1px solid #ffffff20;border-radius:13px;padding:12px 15px;backdrop-filter:blur(12px);box-shadow:0 8px 30px #0005}.brand{font-weight:900;letter-spacing:.12em;font-size:12px;color:#9ce4d1}.sub{font-size:10px;color:#9aa9b4;letter-spacing:.13em;margin-top:4px}.money{font-size:23px;font-weight:800;margin-top:6px}.stat{color:#9baab4;font-size:11px;margin-top:6px}.right{min-width:185px;text-align:right}.stars{font-size:20px;color:#ff4b55;letter-spacing:4px}.bar{height:5px;background:#27323b;border-radius:8px;overflow:hidden;margin-top:7px}.bar i{display:block;height:100%;width:0;background:#f0444e}.bottom{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);display:flex;gap:8px;pointer-events:auto}.btn{border:1px solid #ffffff25;background:#101a22e8;color:#eaf2f5;border-radius:10px;padding:10px 13px;font-weight:700;cursor:pointer}.btn:hover,.btn.active{background:#17483e;border-color:#53d5b3}.hint{position:fixed;bottom:20px;left:18px;color:#c2cbd0;font-size:11px;line-height:1.7;background:#0b1219b9;padding:10px 13px;border-radius:10px;max-width:220px}.mission{position:fixed;top:105px;left:18px;max-width:260px}.toast{position:fixed;top:24%;left:50%;transform:translateX(-50%);background:#111c24ed;border:1px solid #5cd6b3;padding:12px 18px;border-radius:10px;opacity:0;transition:.25s;pointer-events:none}.toast.show{opacity:1}.center{position:fixed;inset:0;display:grid;place-items:center;background:radial-gradient(ellipse at center,#101b24ed,#05090df2);z-index:5}.intro{width:min(560px,calc(100% - 32px));padding:28px;border:1px solid #ffffff24;border-radius:18px;background:#0d151df2;box-shadow:0 25px 90px #000a}.intro h1{font-size:clamp(28px,6vw,48px);margin:8px 0;letter-spacing:-.04em}.intro p{color:#aab8c0;line-height:1.6}.tag{color:#62d8b7;font-size:11px;letter-spacing:.18em;font-weight:800}.intro button{background:#5bd3b0;color:#06110e;border:0;padding:13px 18px;border-radius:10px;font-weight:900;cursor:pointer;margin-top:12px}.mini{font-size:11px;color:#9baab4;margin-top:12px}.hidden{display:none!important}@media(max-width:650px){.hint{display:none}.right{min-width:135px}.panel{padding:9px 11px}.mission{top:100px}.bottom{bottom:12px;flex-wrap:wrap;justify-content:center;width:96%}.btn{padding:9px 10px;font-size:11px}}
+</style>
+</head>
+<body>
+<div id="game"></div>
+<div id="hud">
+ <div class="panel"><div class="brand">ABUJA STREETS <span style="color:#fff">/ 3D</span></div><div class="sub">FEDERAL CAPITAL TERRITORY</div><div class="money" id="cash">₦5,000</div><div class="stat" id="district">CENTRAL AREA · ABUJA</div></div>
+ <div class="panel right"><div class="stars" id="stars">☆☆☆☆☆</div><div class="stat" id="wanted">NO ACTIVE PURSUIT</div><div class="bar"><i id="heatbar"></i></div><div class="stat" id="vehicle">SEDAN · ENGINE ON</div></div>
+</div>
+<div class="panel mission" id="mission"><b style="color:#65d9b8">CURRENT OBJECTIVE</b><div id="objective" style="margin-top:6px">Drive around Abuja. Find a job.</div><div class="stat" id="missionextra">Explore the city and test the vehicle.</div></div>
+<div class="hint">DRIVE: W A S D / ARROWS<br>HANDBRAKE: SPACE · NITRO: SHIFT<br>CAMERA: MOUSE DRAG / TOUCH<br>ESC: RELEASE MOUSE</div>
+<div class="bottom">
+<button class="btn" id="job">START JOB +₦</button><button class="btn" id="garage">GARAGE</button><button class="btn" id="weather">WEATHER: CLEAR</button><button class="btn" id="time">TIME: DAY</button><button class="btn" id="reset">RESPAWN</button>
+</div>
+<div class="toast" id="toast"></div>
+<div class="center" id="intro"><div class="intro"><div class="tag">A NEW BUILD · PLAYABLE 3D PROTOTYPE</div><h1>ABUJA<br><span style="color:#65d9b8">STREETS.</span></h1><p>A third-person 3D driving prototype set in an Abuja-inspired open city. Explore the roads, pass landmarks, take a job, visit the garage and see how the police respond.</p><button id="start">ENTER THE CITY</button><div class="mini">PC: WASD / arrows · Space handbrake · Shift nitro · Mouse drag camera<br>Mobile: on-screen driving controls are being added in the next pass.</div></div></div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+const mount=document.getElementById('game');
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x91b8c8);scene.fog=new THREE.Fog(0x91b8c8,170,900);
+const camera=new THREE.PerspectiveCamera(62,innerWidth/innerHeight,.1,1600);
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;mount.appendChild(renderer.domElement);
+const hemi=new THREE.HemisphereLight(0xddeeff,0x52604a,2.0);scene.add(hemi);
+const sun=new THREE.DirectionalLight(0xffe4bd,3.0);sun.position.set(-140,220,100);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-260;sun.shadow.camera.right=260;sun.shadow.camera.top=260;sun.shadow.camera.bottom=-260;scene.add(sun);
+const mat=(c,r=.85,m=0)=>new THREE.MeshStandardMaterial({color:c,roughness:r,metalness:m});
+const asphalt=mat(0x252c32),roadLine=mat(0xe8d9a7),grass=mat(0x526a4a),sidewalk=mat(0x8c918e),glass=mat(0x315365,.28,.45);
+const world=new THREE.Group();scene.add(world);
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(1200,1200),grass);ground.rotation.x=-Math.PI/2;ground.position.y=-.16;ground.receiveShadow=true;world.add(ground);
+function box(parent,x,y,z,w,h,d,material){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);o.position.set(x,y+h/2,z);o.castShadow=true;o.receiveShadow=true;parent.add(o);return o}
+function road(x,z,w,d){box(world,x,-.08,z,w,.12,d,asphalt);if(w>d){for(let k=-Math.floor(w/18);k<=Math.floor(w/18);k++)box(world,x+k*18,.001,z,7,.012,.22,roadLine)}else{for(let k=-Math.floor(d/18);k<=Math.floor(d/18);k++)box(world,x,.001,z+k*18,.22,.012,7,roadLine)}}
+road(0,0,1000,24);road(0,0,24,1000);
+for(let i=-4;i<=4;i++){road(i*110,0,24,1000);road(0,i*110,1000,24)}
+for(let x=-450;x<=450;x+=110)for(let z=-450;z<=450;z+=110){if(Math.abs(x)<30||Math.abs(z)<30)continue;box(world,x,0,z,82,.25,82,sidewalk)}
+const districts=[['CENTRAL AREA',0,0],['MAITAMA',-220,-220],['WUSE',220,-220],['GARKI',-220,220],['ASOKORO',220,220],['JABI',0,-440],['GWARINPA',440,-110],['GUZAPE',330,440],['UTAKO',-440,-110],['APO',-110,440]];
+const buildingMats=[0x9a9b91,0xb3a58f,0x737e83,0xc2b9a6,0x65727a,0x9b8068,0xd0c7b5].map(c=>mat(c));
+let seed=12345;function rand(){seed=(seed*1664525+1013904223)>>>0;return seed/4294967296}
+for(let x=-470;x<=470;x+=55)for(let z=-470;z<=470;z+=55){if(Math.abs(x)<36||Math.abs(z)<36)continue;const district=districts.reduce((a,b)=>Math.hypot(x-b[1],z-b[2])<Math.hypot(x-a[1],z-a[2])?b:a,districts[0]);const count=1+Math.floor(rand()*3);for(let n=0;n<count;n++){const bx=x+(rand()-.5)*28,bz=z+(rand()-.5)*28,w=10+rand()*18,d=10+rand()*18,h=8+rand()* (district[0]==='CENTRAL AREA'?48:30);box(world,bx,0,bz,w,h,d,buildingMats[Math.floor(rand()*buildingMats.length)]);if(h>22){const roof=box(world,bx,h,bz,w*.55,1.2,d*.55,mat(0x48545a));roof.castShadow=true}}}
+function landmark(name,x,z,w,h,d,color){const base=box(world,x,0,z,w,h,d,mat(color));box(world,x,h,z,w*.72,2,d*.72,mat(0x344b52));const sign=box(world,x,h*.65,z+d/2+1,w*.9,2,.5,mat(0x122d32));const c=document.createElement('canvas');c.width=512;c.height=96;const ctx=c.getContext('2d');ctx.fillStyle='#102e2b';ctx.fillRect(0,0,512,96);ctx.fillStyle='#9cf2d9';ctx.font='bold 38px Arial';ctx.textAlign='center';ctx.fillText(name,256,62);const tex=new THREE.CanvasTexture(c);sign.material=new THREE.MeshBasicMaterial({map:tex});return base}
+landmark('JABI LAKE MALL',-30,-420,58,18,32,0xc6bda7);
+landmark('NATIONAL ASSEMBLY',250,260,72,34,60,0xb5a88d);
+landmark('ABUJA CITY GATE',0,-165,62,15,12,0xd6c5a0);
+landmark('CENTRAL MOSQUE',70,85,35,24,35,0xd4c8a7);
+landmark('MILLENNIUM PARK',-280,-280,48,3,48,0x547b4c);
+landmark('WUSE MARKET',280,-260,55,16,45,0xb28d68);
+function tree(x,z){const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.45,.7,4,7),mat(0x60462f));trunk.position.set(x,2,z);trunk.castShadow=true;world.add(trunk);const crown=new THREE.Mesh(new THREE.SphereGeometry(3.2,8,7),mat(0x376b43));crown.position.set(x,5.4,z);crown.castShadow=true;world.add(crown)}
+for(let i=0;i<160;i++){const x=(rand()-.5)*950,z=(rand()-.5)*950;if(Math.abs(x%110)<19||Math.abs(z%110)<19)continue;tree(x,z)}
+// Player vehicle: detailed low-poly sedan with body, cabin, glass, wheels and lights.
+const car=new THREE.Group();const body=box(car,0,.8,0,2.35,.8,4.6,mat(0x172d3b,.35,.35));body.position.y=.8;
+const cabin=box(car,0,1.55,-.25,1.85,.85,2.35,glass);cabin.position.y=1.55;
+const roof=box(car,0,2.02,-.3,1.72,.12,1.8,mat(0x15252e));roof.position.y=2.02;
+const wheelMat=mat(0x111416),rim=mat(0x9da7a9,.3,.7);
+for(const x of [-1.18,1.18])for(const z of [-1.45,1.45]){const wh=new THREE.Mesh(new THREE.CylinderGeometry(.48,.48,.28,16),wheelMat);wh.rotation.z=Math.PI/2;wh.position.set(x,.48,z);wh.castShadow=true;car.add(wh);const hub=new THREE.Mesh(new THREE.CylinderGeometry(.2,.2,.3,12),rim);hub.rotation.z=Math.PI/2;hub.position.copy(wh.position);car.add(hub)}
+for(const x of [-.78,.78]){const light=box(car,x,.9,2.31,.45,.22,.08,mat(0xfff2c7,.2));light.material.emissive=new THREE.Color(0xffdca0);light.material.emissiveIntensity=.4}
+car.position.set(0,0,42);scene.add(car);
+const state={speed:0,angle:0,cash:5000,heat:0,bust:0,nitro:100,job:null,weather:false,night:false,garage:false};
+const keys={};addEventListener('keydown',e=>{keys[e.code]=true;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault()});addEventListener('keyup',e=>keys[e.code]=false);
+let dragging=false,lastX=0,camYaw=0,camPitch=.22;renderer.domElement.addEventListener('pointerdown',e=>{dragging=true;lastX=e.clientX});addEventListener('pointerup',()=>dragging=false);addEventListener('pointermove',e=>{if(dragging){camYaw-=(e.clientX-lastX)*.006;lastX=e.clientX}});
+const traffic=[],peds=[],cops=[];
+function makeCar(color,x,z){const g=new THREE.Group();box(g,0,.65,0,2,.65,4,mat(color,.45,.2));box(g,0,1.22,-.25,1.6,.65,2,glass);for(const xx of [-1,1])for(const zz of [-1.2,1.2]){const w=new THREE.Mesh(new THREE.CylinderGeometry(.38,.38,.22,12),wheelMat);w.rotation.z=Math.PI/2;w.position.set(xx,.4,zz);g.add(w)}g.position.set(x,0,z);scene.add(g);return g}
+for(let i=0;i<22;i++){const horizontal=rand()>.5, lane=rand()>.5?5:-5, p=(rand()-.5)*900;const v=makeCar([0xb5b9bc,0xc8c3ae,0x243f56,0x7d2828,0xd6d0bc][i%5],horizontal?p:lane,horizontal?lane:p);traffic.push({o:v,horizontal,dir:rand()>.5?1:-1,speed:7+rand()*7,base:p})}
+const pedMat=mat(0xb68b65);for(let i=0;i<65;i++){const p=new THREE.Group();const torso=new THREE.Mesh(new THREE.CapsuleGeometry(.32,.75,3,6),pedMat);torso.position.y=1; p.add(torso);const head=new THREE.Mesh(new THREE.SphereGeometry(.25,8,8),mat(0x704b38));head.position.y=1.65;p.add(head);p.position.set((rand()-.5)*850,0,(rand()-.5)*850);scene.add(p);peds.push({o:p,phase:rand()*6})}
+function spawnCop(){const a=rand()*Math.PI*2;const o=makeCar(0x172c3c,car.position.x+Math.cos(a)*75,car.position.z+Math.sin(a)*75);const roof=box(o,0,1.7,0,1.3,.12,1.5,mat(0xe7e9e9));roof.position.y=1.7;const beacon=box(o,0,1.85,0,.65,.18,.35,mat(0xff293e));beacon.position.y=1.85;cops.push({o,leave:false,stuck:0})}
+function notify(s){const t=document.getElementById('toast');t.textContent=s;t.classList.add('show');clearTimeout(notify.timer);notify.timer=setTimeout(()=>t.classList.remove('show'),2300)}
+function reset(){car.position.set(0,0,42);state.speed=0;state.angle=0}
+function startJob(){if(state.job){notify('Finish the current job first.');return}const dest=[[-220,-220],[220,-220],[-220,220],[220,220],[0,-440]][Math.floor(rand()*5)];state.job={x:dest[0],z:dest[1]};document.getElementById('objective').textContent='Drive to the green marker';document.getElementById('missionextra').textContent='Complete the delivery for ₦2,500';notify('New delivery accepted. Destination marked.')}
+document.getElementById('job').onclick=startJob;
+document.getElementById('garage').onclick=()=>{const d=Math.hypot(car.position.x+440,car.position.z+440);if(d<38){state.cash=Math.max(0,state.cash-500);state.speed=0;notify('Garage service complete. Vehicle repaired · ₦500')}else notify('Garage is in Utako. Drive to the garage marker at (-440, -440).')};
+document.getElementById('weather').onclick=()=>{state.weather=!state.weather;scene.fog.color.set(state.weather?0x71818b:state.night?0x091421:0x91b8c8);scene.background=scene.fog.color;notify(state.weather?'Rain and low visibility enabled':'Clear weather restored');document.getElementById('weather').textContent='WEATHER: '+(state.weather?'RAIN':'CLEAR')};
+document.getElementById('time').onclick=()=>{state.night=!state.night;sun.intensity=state.night?.35:3;hemi.intensity=state.night?.45:2;scene.fog.color.set(state.night?0x091421:0x91b8c8);scene.background=scene.fog.color;notify(state.night?'Night lighting enabled':'Daytime restored');document.getElementById('time').textContent='TIME: '+(state.night?'NIGHT':'DAY')};
+document.getElementById('reset').onclick=reset;
+document.getElementById('start').onclick=()=>document.getElementById('intro').classList.add('hidden');
+let last=performance.now(),elapsed=0;
+const marker=new THREE.Mesh(new THREE.CylinderGeometry(4,4,.3,24),new THREE.MeshBasicMaterial({color:0x55f0b5}));marker.position.y=.25;marker.visible=false;scene.add(marker);
+function frame(now){requestAnimationFrame(frame);const dt=Math.min(.04,(now-last)/1000);last=now;elapsed+=dt;
+const forward=(keys.KeyW||keys.ArrowUp?1:0)-(keys.KeyS||keys.ArrowDown?1:0),steer=(keys.KeyA||keys.ArrowLeft?1:0)-(keys.KeyD||keys.ArrowRight?1:0),hand=keys.Space;
+const boost=(keys.ShiftLeft||keys.ShiftRight)&&state.nitro>0&&Math.abs(state.speed)>4;
+if(boost){state.nitro=Math.max(0,state.nitro-24*dt)}else state.nitro=Math.min(100,state.nitro+8*dt);
+state.speed+=forward*(boost?34:20)*dt;state.speed*=Math.pow(hand?.91:.985,dt*60);state.speed=THREE.MathUtils.clamp(state.speed,-18,boost?44:30);
+state.angle+=steer*dt*(.75+Math.min(1,Math.abs(state.speed)/15))*(state.speed>=0?1:-1)*(hand?1.35:1);
+car.rotation.y=state.angle;const dir=new THREE.Vector3(Math.sin(state.angle),0,Math.cos(state.angle));car.position.addScaledVector(dir,state.speed*dt);
+car.position.x=THREE.MathUtils.clamp(car.position.x,-490,490);car.position.z=THREE.MathUtils.clamp(car.position.z,-490,490);
+for(const t of traffic){const v=t.o.position;if(t.horizontal)v.x+=t.dir*t.speed*dt;else v.z+=t.dir*t.speed*dt;if(Math.abs(t.horizontal?v.x:v.z)>490){if(t.horizontal)v.x=-490;else v.z=-490}}
+for(const p of peds){p.phase+=dt;p.o.position.x+=Math.sin(p.phase)*dt*1.3;p.o.position.z+=Math.cos(p.phase*.7)*dt*1.1}
+const wanted=state.heat>0;while(cops.length<Math.ceil(state.heat)&&cops.length<5)spawnCop();
+for(const c of cops){const dx=car.position.x-c.o.position.x,dz=car.position.z-c.o.position.z,d=Math.hypot(dx,dz);if(state.heat>0){c.leave=false;const target=Math.atan2(dx,dz);c.o.rotation.y=target;c.o.position.x+=Math.sin(target)*dt*14;c.o.position.z+=Math.cos(target)*dt*14;if(d<5&&Math.abs(state.speed)<3)state.bust+=dt;else state.bust=Math.max(0,state.bust-dt*1.6)}else{c.leave=true;c.o.position.x-=dx/(d||1)*dt*10;c.o.position.z-=dz/(d||1)*dt*10}}
+if(state.bust>3){state.cash=Math.max(0,state.cash-750);state.heat=0;state.bust=0;notify('BUSTED · Fine paid: ₦750');reset()}
+if(state.heat>0){const closest=cops.reduce((m,c)=>Math.min(m,c.o.position.distanceTo(car.position)),Infinity);if(closest<90)state.heat=Math.min(5,state.heat+.0);else state.heat=Math.max(0,state.heat-dt*.035)}cops.forEach((c,i)=>{if(c.leave&&c.o.position.distanceTo(car.position)>180){scene.remove(c.o);cops.splice(i,1)}});
+if(state.job){marker.visible=true;marker.position.set(state.job.x,.25,state.job.z);if(Math.hypot(car.position.x-state.job.x,car.position.z-state.job.z)<13){state.cash+=2500;state.job=null;marker.visible=false;notify('Delivery complete · +₦2,500');document.getElementById('objective').textContent='Drive around Abuja. Find a job.';document.getElementById('missionextra').textContent='Explore the city and test the vehicle.'}}else marker.visible=false;
+const desired=new THREE.Vector3(car.position.x-Math.sin(state.angle+camYaw)*13,7+camPitch*8,car.position.z-Math.cos(state.angle+camYaw)*13);camera.position.lerp(desired,1-Math.pow(.001,dt));camera.lookAt(car.position.x,1.1,car.position.z);
+document.getElementById('cash').textContent='₦'+Math.round(state.cash).toLocaleString('en-NG');document.getElementById('stars').textContent='★'.repeat(Math.ceil(state.heat))+'☆'.repeat(5-Math.ceil(state.heat));document.getElementById('wanted').textContent=state.bust>0?'POLICE CLOSING IN':'POLICE PURSUIT';document.getElementById('heatbar').style.width=(state.bust/3*100)+'%';document.getElementById('heatbar').style.background='#ed3e49';document.getElementById('district').textContent=districts.reduce((a,b)=>Math.hypot(car.position.x-b[1],car.position.z-b[2])<Math.hypot(car.position.x-a[1],car.position.z-a[2])?b:a,districts[0])[0]+' · ABUJA';document.getElementById('vehicle').textContent='SEDAN · '+Math.round(Math.abs(state.speed)*3.6)+' KM/H · N₂O '+Math.round(state.nitro)+'%';
+renderer.render(scene,camera)}
+requestAnimationFrame(frame);
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+</script></body></html>
