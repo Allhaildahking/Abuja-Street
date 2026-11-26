@@ -58,7 +58,7 @@ const wheelMat=mat(0x111416),rim=mat(0x9da7a9,.3,.7);
 for(const x of [-1.18,1.18])for(const z of [-1.45,1.45]){const wh=new THREE.Mesh(new THREE.CylinderGeometry(.48,.48,.28,16),wheelMat);wh.rotation.z=Math.PI/2;wh.position.set(x,.48,z);wh.castShadow=true;car.add(wh);const hub=new THREE.Mesh(new THREE.CylinderGeometry(.2,.2,.3,12),rim);hub.rotation.z=Math.PI/2;hub.position.copy(wh.position);car.add(hub)}
 for(const x of [-.78,.78]){const light=box(car,x,.9,2.31,.45,.22,.08,mat(0xfff2c7,.2));light.material.emissive=new THREE.Color(0xffdca0);light.material.emissiveIntensity=.4}
 car.position.set(0,0,42);scene.add(car);
-const state={speed:0,angle:0,cash:5000,heat:0,bust:0,nitro:100,job:null,weather:false,night:false,garage:false};
+const state={speed:0,angle:0,cash:5000,heat:0,bust:0,nitro:100,job:null,weather:false,night:false,garage:false,hitCooldown:0};
 const keys={};addEventListener('keydown',e=>{keys[e.code]=true;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault()});addEventListener('keyup',e=>keys[e.code]=false);
 let dragging=false,lastX=0,camYaw=0,camPitch=.22;renderer.domElement.addEventListener('pointerdown',e=>{dragging=true;lastX=e.clientX});addEventListener('pointerup',()=>dragging=false);addEventListener('pointermove',e=>{if(dragging){camYaw-=(e.clientX-lastX)*.006;lastX=e.clientX}});
 const traffic=[],peds=[],cops=[];
@@ -86,6 +86,7 @@ state.angle+=steer*dt*(.75+Math.min(1,Math.abs(state.speed)/15))*(state.speed>=0
 car.rotation.y=state.angle;const dir=new THREE.Vector3(Math.sin(state.angle),0,Math.cos(state.angle));car.position.addScaledVector(dir,state.speed*dt);
 car.position.x=THREE.MathUtils.clamp(car.position.x,-490,490);car.position.z=THREE.MathUtils.clamp(car.position.z,-490,490);
 for(const t of traffic){const v=t.o.position;if(t.horizontal)v.x+=t.dir*t.speed*dt;else v.z+=t.dir*t.speed*dt;if(Math.abs(t.horizontal?v.x:v.z)>490){if(t.horizontal)v.x=-490;else v.z=-490}}
+state.hitCooldown=Math.max(0,state.hitCooldown-dt);for(const t of traffic){if(state.hitCooldown<=0&&car.position.distanceTo(t.o.position)<3.1&&Math.abs(state.speed)>8){state.heat=Math.min(5,state.heat+1);state.speed*=.35;state.hitCooldown=1.8;notify('Traffic collision · Police alerted');}}
 for(const p of peds){p.phase+=dt;p.o.position.x+=Math.sin(p.phase)*dt*1.3;p.o.position.z+=Math.cos(p.phase*.7)*dt*1.1}
 const wanted=state.heat>0;while(cops.length<Math.ceil(state.heat)&&cops.length<5)spawnCop();
 for(const c of cops){const dx=car.position.x-c.o.position.x,dz=car.position.z-c.o.position.z,d=Math.hypot(dx,dz);if(state.heat>0){c.leave=false;const target=Math.atan2(dx,dz);c.o.rotation.y=target;c.o.position.x+=Math.sin(target)*dt*14;c.o.position.z+=Math.cos(target)*dt*14;if(d<5&&Math.abs(state.speed)<3)state.bust+=dt;else state.bust=Math.max(0,state.bust-dt*1.6)}else{c.leave=true;c.o.position.x-=dx/(d||1)*dt*10;c.o.position.z-=dz/(d||1)*dt*10}}
