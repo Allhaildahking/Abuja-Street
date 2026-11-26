@@ -580,7 +580,7 @@ function updatePlayer(dt) {
   for (const c of cops) {
     const d = Math.hypot(c.x - P.x, c.y - P.y);
     if (d < 60) carHit(P, c, false);
-    if (d < 450) near = true;
+    if (d < 700) near = true;
   }
   const sp = Math.hypot(P.vx, P.vy);
   if (cops.some(c => !c.leave && Math.hypot(c.x - P.x, c.y - P.y) < 55) && sp < 100) bustT += dt; else bustT = Math.max(0, bustT - dt * 2);
@@ -590,7 +590,7 @@ function updatePlayer(dt) {
   }
   // Keep a wanted level alive while an active police pursuit is underway.
   const activePursuit = cops.some(c => !c.leave);
-  const heatDecay = activePursuit ? (near ? .008 : .018) : .06;
+  const heatDecay = activePursuit ? (near ? .0005 : .008) : .06;
   heat = Math.max(0, heat - heatDecay * dt);
   const stars = Math.ceil(heat - .001);
   if (stars > prevStars && prevStars === 0) toast('Police are after you', 'bad');
