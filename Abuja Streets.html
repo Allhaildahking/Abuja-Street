@@ -39,6 +39,10 @@ body{margin:0;background:var(--ink);color:var(--text);font-family:var(--body);ov
 .mini{position:absolute;right:16px;top:12px;width:120px;height:120px;border-radius:10px;border:2px solid rgba(255,255,255,.4);box-shadow:0 2px 10px rgba(0,0,0,.4);pointer-events:none}
 .hp{height:5px;border-radius:3px;background:rgba(255,255,255,.14);margin-top:7px;overflow:hidden}
 .hp i{display:block;height:100%;width:100%;background:var(--green);transition:width .2s}
+.vehicle-health{display:flex;align-items:center;gap:8px;margin-top:7px;font:700 9px var(--display);letter-spacing:1px;color:var(--muted)}
+.vehicle-health>div{height:5px;flex:1;border-radius:5px;background:rgba(255,255,255,.16);overflow:hidden}
+.vehicle-health i{display:block;width:100%;height:100%;background:#70cf8b;transition:width .2s,background .2s}
+.vehicle-health b{min-width:28px;text-align:right;color:var(--text);font-size:9px}
 .nitro{display:flex;align-items:center;gap:8px;margin-top:7px;font:700 10px var(--display);letter-spacing:1px;color:#8fe9ff}
 .nitro-track{height:5px;flex:1;border-radius:5px;background:rgba(255,255,255,.16);overflow:hidden}
 .nitro-track i{display:block;width:100%;height:100%;background:linear-gradient(90deg,#20a8e8,#9df5ff);box-shadow:0 0 9px #36c8ff;transition:width .12s}
@@ -83,6 +87,7 @@ h1 em{font-style:normal;color:var(--green)}
     <div class="panel">
       <div class="row"><div class="cash" id="cash">₦5,000</div><div class="spd"><b id="spd">0</b> km/h</div></div>
       <div class="stars" id="stars"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></div>
+      <div class="vehicle-health"><span>VEHICLE</span><div><i id="healthf"></i></div><b id="healthtxt">100%</b></div>
       <div class="bust" id="bust"><i id="bustf"></i></div>
       <div class="nitro" id="nitro"><span>N₂O</span><div class="nitro-track"><i id="nitrof"></i></div><span id="nitrotxt">100%</span></div>
     </div>
@@ -474,7 +479,11 @@ function drawPeds(vx0, vx1, vy0, vy1) {
     ctx.restore();
   }
 }
-function damage(v) { if (running) P.hp = Math.max(0, P.hp - v); }
+function damage(v) {
+  if (!running || v <= 0 || P.hp <= 0) return;
+  P.hp = Math.max(0, P.hp - v);
+  if (P.hp <= 0) wreck();
+}
 function wreck() {
   const fine = Math.min(cash, 1000); cash -= fine; toast('Wrecked  −' + fmt(fine), 'bad');
   P.x = clamp(Math.round(P.x / G), 0, N) * G; P.y = clamp(Math.round(P.y / G), 0, N) * G; P.vx = P.vy = 0; P.hp = 100; P.steer = 0; heat = 0; bustT = 0; driftT = 0; driftPeak = 0;
@@ -563,12 +572,16 @@ function updatePlayer(dt) {
   } else { driftT = 0; driftPeak = 0; }
   P.thr = thr; P.brake = (thr < 0 && P.vF > 20) || hb;
   const imp = collideWalls(P);
-  if (imp > 120) { burst(P.x, P.y, 6, '#ffd27a', 140); buzz(30); thud(clamp(imp / 400, .2, 1)); shake = Math.max(shake, clamp(imp / 500, 0, 1)); }
+  if (imp > 120) {
+    damage((imp - 90) * .045);
+    burst(P.x, P.y, 6, '#ffd27a', 140); buzz(30); thud(clamp(imp / 400, .2, 1)); shake = Math.max(shake, clamp(imp / 500, 0, 1));
+  }
   for (const c of traffic) {
     if (Math.abs(c.x - P.x) > 60 || Math.abs(c.y - P.y) > 60) continue;
     const hit = carHit(P, c, true);
     if (hit > 40) {
       c.stun = 1.4; c.speed = 0;
+      damage(Math.max(0, hit - 28) * .035);
       if (hit > 65 && c.hitT <= 0) {
         c.hitT = 2.2; heat = Math.min(5, heat + 1);
         if (mission && mission.stage === 'dropoff') mission.bumps++;
@@ -576,6 +589,7 @@ function updatePlayer(dt) {
       }
     }
   }
+  if (P.hp < 35 && Math.random() < .09) smokeHood();
   let near = false;
   for (const c of cops) {
     const d = Math.hypot(c.x - P.x, c.y - P.y);
@@ -1026,12 +1040,13 @@ function drawMini() {
 }
 
 /* ---------- HUD ---------- */
-const el = { cash: $('cash'), spd: $('spd'), stars: $('stars'), bust: $('bust'), bustf: $('bustf'), mission: $('mission'), loc: $('loc'), nitro: $('nitro'), nitrof: $('nitrof'), nitrotxt: $('nitrotxt') };
+const el = { cash: $('cash'), spd: $('spd'), stars: $('stars'), bust: $('bust'), bustf: $('bustf'), mission: $('mission'), loc: $('loc'), nitro: $('nitro'), nitrof: $('nitrof'), nitrotxt: $('nitrotxt'), healthf: $('healthf'), healthtxt: $('healthtxt') };
 let lastM = '', lastLoc = 0;
 function hud() {
   el.cash.textContent = fmt(cash);
   el.spd.textContent = Math.round(Math.hypot(P.vx, P.vy) * .36);  const st = Math.ceil(heat - .001);
   el.nitrof.style.width = nitro.toFixed(1) + '%'; el.nitrotxt.textContent = Math.round(nitro) + '%'; el.nitro.classList.toggle('active', boosting);
+  el.healthf.style.width = P.hp.toFixed(1) + '%'; el.healthf.style.background = P.hp < 25 ? '#ef6262' : P.hp < 55 ? '#e7b85c' : '#70cf8b'; el.healthtxt.textContent = Math.ceil(P.hp) + '%';
   [...el.stars.children].forEach((s, i) => s.classList.toggle('on', i < st));
   el.stars.classList.toggle('hot', st > 0 && cops.some(c => Math.hypot(c.x - P.x, c.y - P.y) < 950));
   el.bust.style.display = bustT > 0 ? 'block' : 'none'; el.bustf.style.width = clamp(bustT / 2.2, 0, 1) * 100 + '%';
