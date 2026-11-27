@@ -262,7 +262,12 @@ for (let by = 0; by < N; by++) for (let bx = 0; bx < N; bx++) {
       const roof = pick(district.roofs), ht = (6 + R() * 12) * district.floors;
       const det = [];
       for (let k = 0; k < 2; k++) det.push({ x: 6 + R() * Math.max(4, w - 26), y: 6 + R() * Math.max(4, h - 22), w: 12 + R() * 8, h: 10 + R() * 6, c: 'rgba(0,0,0,.14)' });
-      b.blds.push({ x, y, w, h, roof, wall: shade(roof, -55), ht, det, district: district.name });
+      const roll=R();
+      const type=district.name==='CENTRAL AREA'?(roll<.72?'office':'plaza'):
+        district.name==='WUSE'||district.name==='GARKI'?(roll<.48?'plaza':roll<.78?'apartment':'residential'):
+        district.name==='MAITAMA'||district.name==='ASOKORO'||district.name==='GUZAPE'?(roll<.72?'residential':'villa'):
+        roll<.38?'residential':roll<.68?'apartment':'plaza';
+      b.blds.push({x,y,w,h,roof,wall:shade(roof,-55),ht,det,district:district.name,type});
       b.solids.push({ x, y, w, h });
     }
   }
@@ -672,41 +677,35 @@ function treeOld(x, y, r) {
 }
 function poly(pts, ox, oy, sc, cx, cy) { ctx.beginPath(); pts.forEach((p, i) => { const x = cx + (p[0] - cx) * sc + ox, y = cy + (p[1] - cy) * sc + oy; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.closePath(); ctx.fill(); }
 function drawBld(b) {
-  const o = b.ht, k = SCALE, rx = b.x - o * .5, ry = b.y - o * .6;
-  ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.42)'; ctx.shadowBlur = 11 * k; ctx.shadowOffsetX = (o + 5) * k; ctx.shadowOffsetY = (o + 9) * k;
-  ctx.fillStyle = b.wall; ctx.fillRect(b.x, b.y, b.w, b.h); ctx.restore();
-  const g = ctx.createLinearGradient(rx, ry, rx + b.w, ry + b.h); g.addColorStop(0, shade(b.roof, 16)); g.addColorStop(1, shade(b.roof, -18));
-  ctx.fillStyle = g; ctx.fillRect(rx, ry, b.w, b.h);
-  ctx.fillStyle = patRoof; ctx.fillRect(rx, ry, b.w, b.h);
-  ctx.strokeStyle = 'rgba(255,255,255,.38)'; ctx.lineWidth = 2; ctx.strokeRect(rx + 1, ry + 1, b.w - 2, b.h - 2);
-  ctx.strokeStyle = 'rgba(0,0,0,.28)'; ctx.lineWidth = 1; ctx.strokeRect(rx + 4, ry + 4, b.w - 8, b.h - 8);
-  /* Roof material seams and service access panels create readable building silhouettes. */
-  ctx.save(); ctx.beginPath(); ctx.rect(rx + 5, ry + 5, b.w - 10, b.h - 10); ctx.clip();
-  ctx.strokeStyle = 'rgba(20,24,25,.17)'; ctx.lineWidth = 1;
-  for (let yy = ry + 14; yy < ry + b.h - 8; yy += 18) { ctx.beginPath(); ctx.moveTo(rx + 7, yy); ctx.lineTo(rx + b.w - 7, yy); ctx.stroke(); }
-  for (let xx = rx + 15; xx < rx + b.w - 8; xx += 27) { ctx.beginPath(); ctx.moveTo(xx, ry + 7); ctx.lineTo(xx, ry + b.h - 7); ctx.stroke(); }
+  const o=b.ht,k=SCALE,rx=b.x-o*.5,ry=b.y-o*.6,w=b.w,h=b.h,type=b.type||'residential';
+  ctx.save();ctx.shadowColor='rgba(0,0,0,.5)';ctx.shadowBlur=14*k;ctx.shadowOffsetX=(o+6)*k;ctx.shadowOffsetY=(o+10)*k;ctx.fillStyle=shade(b.wall,-12);ctx.fillRect(b.x,b.y,w,h);ctx.restore();
+  const base=ctx.createLinearGradient(rx,ry,rx+w,ry+h);base.addColorStop(0,shade(b.roof,24));base.addColorStop(.55,b.roof);base.addColorStop(1,shade(b.roof,-32));ctx.fillStyle=base;ctx.fillRect(rx,ry,w,h);ctx.fillStyle=patRoof;ctx.fillRect(rx,ry,w,h);
+  ctx.save();ctx.beginPath();ctx.rect(rx+3,ry+3,w-6,h-6);ctx.clip();
+  if(type==='residential'||type==='villa'){
+    ctx.fillStyle='#766d5c';ctx.fillRect(rx+w*.1,ry+h*.1,w*.8,h*.8);ctx.fillStyle='#c1b59e';ctx.fillRect(rx+w*.15,ry+h*.15,w*.7,h*.7);
+    ctx.fillStyle='#727b73';ctx.fillRect(rx+w*.22,ry+h*.22,w*.56,h*.56);ctx.fillStyle='#bdb49f';ctx.fillRect(rx+w*.27,ry+h*.27,w*.46,h*.46);
+    ctx.fillStyle='#607b58';ctx.fillRect(rx+w*.37,ry+h*.37,w*.26,h*.26);
+    ctx.fillStyle='#858b80';for(let q=0;q<4;q++)ctx.fillRect(rx+w*(.18+(q%2)*.58),ry+h*(.18+Math.floor(q/2)*.58),Math.max(5,w*.09),Math.max(5,h*.08));
+    if(type==='villa'){ctx.fillStyle='#4e6950';ctx.fillRect(rx+w*.08,ry+h*.81,w*.84,h*.09);}
+  } else if(type==='office'){
+    ctx.fillStyle='#657579';ctx.fillRect(rx+w*.12,ry+h*.1,w*.76,h*.8);ctx.fillStyle='#aeb9b5';ctx.fillRect(rx+w*.18,ry+h*.16,w*.64,h*.68);
+    ctx.fillStyle='#61777c';ctx.fillRect(rx+w*.25,ry+h*.23,w*.5,h*.54);ctx.fillStyle='#b7c2bd';ctx.fillRect(rx+w*.31,ry+h*.29,w*.38,h*.42);
+    ctx.fillStyle='#526367';ctx.fillRect(rx+w*.4,ry+h*.37,w*.2,h*.26);ctx.fillStyle='#d1d6c9';ctx.fillRect(rx+w*.42,ry+h*.08,w*.16,h*.15);
+    for(let q=0;q<3;q++){ctx.fillStyle='#6c7775';ctx.fillRect(rx+w*(.19+q*.25),ry+h*.79,w*.13,h*.07);}
+  } else if(type==='plaza'){
+    ctx.fillStyle='#777b72';ctx.fillRect(rx+w*.07,ry+h*.08,w*.86,h*.84);ctx.fillStyle='#c4bba8';ctx.fillRect(rx+w*.13,ry+h*.14,w*.74,h*.72);
+    ctx.fillStyle='#6b8583';ctx.fillRect(rx+w*.2,ry+h*.21,w*.6,h*.58);ctx.fillStyle='#a9b6ac';ctx.fillRect(rx+w*.26,ry+h*.27,w*.48,h*.46);
+    ctx.fillStyle='#536a6b';ctx.fillRect(rx+w*.36,ry+h*.36,w*.28,h*.28);ctx.fillStyle='#d3b58a';ctx.fillRect(rx+w*.1,ry+h*.8,w*.8,h*.045);
+  } else {
+    ctx.fillStyle='#7d8580';ctx.fillRect(rx+w*.14,ry+h*.13,w*.72,h*.74);ctx.fillStyle='#c1b9a8';ctx.fillRect(rx+w*.2,ry+h*.19,w*.6,h*.62);
+    ctx.fillStyle='#647c7d';ctx.fillRect(rx+w*.28,ry+h*.27,w*.44,h*.46);ctx.fillStyle='#aeb7aa';ctx.fillRect(rx+w*.34,ry+h*.33,w*.32,h*.34);
+  }
+  ctx.strokeStyle='rgba(26,31,29,.48)';ctx.lineWidth=2;ctx.strokeRect(rx+5,ry+5,w-10,h-10);ctx.strokeStyle='rgba(255,255,255,.48)';ctx.lineWidth=1.5;ctx.strokeRect(rx+3,ry+3,w-6,h-6);
+  ctx.strokeStyle='rgba(35,40,38,.2)';ctx.lineWidth=1;for(let yy=ry+12;yy<ry+h-8;yy+=24){ctx.beginPath();ctx.moveTo(rx+5,yy);ctx.lineTo(rx+w-5,yy);ctx.stroke();}
+  for(const d of b.det||[]){ctx.fillStyle='rgba(0,0,0,.25)';ctx.fillRect(rx+d.x+2,ry+d.y+3,d.w,d.h);ctx.fillStyle='#7e8986';ctx.fillRect(rx+d.x,ry+d.y,d.w,d.h);ctx.fillStyle='rgba(230,237,228,.5)';ctx.fillRect(rx+d.x+1,ry+d.y+1,d.w-2,2);}
   ctx.restore();
-  /* Rooftop detail: parapets, service units, skylights and water tanks. */
-  ctx.fillStyle = 'rgba(255,255,255,.22)'; ctx.fillRect(rx + 3, ry + 3, b.w - 6, 2);
-  ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.fillRect(rx + 3, ry + b.h - 5, b.w - 6, 2);
-  const R = rng(Math.floor(b.x * 3 + b.y * 11 + b.w * 7));
-  for (let n = 0; n < Math.max(2, Math.floor((b.w * b.h) / 1900)); n++) {
-    const ux = rx + 8 + R() * Math.max(2, b.w - 26), uy = ry + 8 + R() * Math.max(2, b.h - 22), uw = 8 + R() * 11, uh = 7 + R() * 9;
-    ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.fillRect(ux + 2, uy + 3, uw, uh);
-    ctx.fillStyle = R() > .5 ? '#777e7d' : '#a4aaa5'; ctx.fillRect(ux, uy, uw, uh);
-    ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fillRect(ux + 1, uy + 1, uw - 2, 1.5);
-  }
-  if (b.w > 60 && b.h > 55) {
-    const tx = rx + b.w * (.25 + R() * .5), ty = ry + b.h * (.25 + R() * .5);
-    ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(tx + 3, ty + 4, 8, 6, 0, 0, TAU); ctx.fill();
-    ctx.fillStyle = '#777e78'; ctx.beginPath(); ctx.ellipse(tx, ty, 8, 6, 0, 0, TAU); ctx.fill();
-    ctx.strokeStyle = 'rgba(255,255,255,.3)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(tx, ty, 5, 3, 0, 0, TAU); ctx.stroke();
-  }
-  for (const d of b.det) {
-    ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.fillRect(rx + d.x + 2, ry + d.y + 3, d.w, d.h);
-    ctx.fillStyle = '#9ea3a6'; ctx.fillRect(rx + d.x, ry + d.y, d.w, d.h); ctx.fillStyle = '#c9cdcf'; ctx.fillRect(rx + d.x, ry + d.y, d.w, 2);
-    ctx.fillStyle = '#6a6f73'; ctx.beginPath(); ctx.arc(rx + d.x + d.w / 2, ry + d.y + d.h / 2, Math.min(d.w, d.h) * .3, 0, TAU); ctx.fill();
-  }
+  const R=rng(Math.floor(b.x*3+b.y*11+b.w*7));if(w>48&&h>42)for(let n=0;n<(type==='office'?3:2);n++){const tx=rx+w*(.2+R()*.6),ty=ry+h*(.2+R()*.6);ctx.fillStyle='rgba(0,0,0,.3)';ctx.beginPath();ctx.ellipse(tx+2,ty+3,5,4,0,0,TAU);ctx.fill();ctx.fillStyle=type==='office'?'#657477':'#818a83';ctx.beginPath();ctx.ellipse(tx,ty,5,4,0,0,TAU);ctx.fill();ctx.strokeStyle='rgba(245,245,230,.5)';ctx.lineWidth=1;ctx.beginPath();ctx.ellipse(tx,ty,3,2,0,0,TAU);ctx.stroke();}
+  ctx.fillStyle=type==='office'?'#4e7780':type==='plaza'?'#bd8c4e':type==='apartment'?'#8b987e':'#987d62';ctx.fillRect(rx+7,ry+7,Math.min(17,w*.2),3);
 }
 function drawBldOld(b) {
   const o = b.ht;
