@@ -659,16 +659,55 @@ function noisePat(size, amax) {
 }
 const patGrass = noisePat(128, 38), patAsphalt = noisePat(128, 58), patRoof = noisePat(64, 32);
 function tree(x, y, r) {
-  const R = rng(Math.floor(x * 7 + y * 13)), greens = ['#244f32', '#2d6037', '#356c3d', '#3c7540', '#477e43'];
-  ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(x + r * .62, y + r * .82, r * 1.18, r * .82, -.18, 0, TAU); ctx.fill();
-  ctx.fillStyle = '#66503a'; ctx.fillRect(x - r * .12, y + r * .12, r * .24, r * .78);
-  for (let k = 0; k < 11; k++) {
-    const a = k / 11 * TAU + R() * .38, d = r * (.12 + R() * .42), q = r * (.34 + R() * .25);
-    ctx.fillStyle = greens[Math.floor(R() * greens.length)];
-    ctx.beginPath(); ctx.ellipse(x + Math.cos(a) * d, y + Math.sin(a) * d * .82, q, q * (.72 + R() * .25), a * .25, 0, TAU); ctx.fill();
+  /* Procedural Abuja landscaping: deterministic species and crown shapes, so the
+     same tree keeps its identity across frames and devices. */
+  const R = rng(Math.floor(x * 7 + y * 13 + r * 31));
+  const species = Math.floor(R() * 4);
+  const palettes = [
+    ['#173e2b', '#245638', '#326c40', '#477e49', '#6d9250'], // dense broadleaf
+    ['#24462c', '#315d35', '#477544', '#62894c', '#849b55'], // lighter ornamental
+    ['#4b512c', '#606b35', '#798347', '#929452', '#b0a56a'], // dry-season acacia
+    ['#24523d', '#28684d', '#39805b', '#55956b', '#7ca77a']  // tropical evergreen
+  ];
+  const greens = palettes[species], crown = r * (species === 2 ? 1.45 : species === 1 ? 1.34 : 1.25);
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,.34)';
+  ctx.beginPath(); ctx.ellipse(x + r * .62, y + r * .78, crown * 1.08, crown * .78, -.2, 0, TAU); ctx.fill();
+  /* Exposed trunk and radial root shadow anchor the canopy to the ground. */
+  ctx.fillStyle = '#59432e'; ctx.beginPath(); ctx.arc(x, y + r * .12, Math.max(1.8, r * .2), 0, TAU); ctx.fill();
+  ctx.strokeStyle = 'rgba(61,45,29,.5)'; ctx.lineWidth = Math.max(1, r * .1);
+  ctx.beginPath(); ctx.moveTo(x, y + r * .15); ctx.lineTo(x + r * .45, y + r * .55); ctx.moveTo(x, y + r * .15); ctx.lineTo(x - r * .42, y + r * .48); ctx.stroke();
+  if (species === 3 && r >= 9) {
+    /* Palm crown: long pointed fronds rather than another round green blob. */
+    ctx.fillStyle = '#24533a'; ctx.beginPath(); ctx.arc(x, y, r * .3, 0, TAU); ctx.fill();
+    for (let k = 0; k < 9; k++) {
+      const a = k / 9 * TAU + R() * .16, len = r * (1.05 + R() * .32);
+      const ex = x + Math.cos(a) * len, ey = y + Math.sin(a) * len * .78;
+      ctx.strokeStyle = greens[k % greens.length]; ctx.lineWidth = Math.max(1.5, r * .19);
+      ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + Math.cos(a) * len * .48 - Math.sin(a) * r * .16, y + Math.sin(a) * len * .38 + Math.cos(a) * r * .12, ex, ey); ctx.stroke();
+      ctx.strokeStyle = 'rgba(180,194,115,.55)'; ctx.lineWidth = Math.max(.7, r * .055);
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(ex, ey); ctx.stroke();
+    }
+  } else {
+    const lobes = species === 2 ? 8 : 12;
+    for (let k = 0; k < lobes; k++) {
+      const a = k / lobes * TAU + R() * .32, d = crown * (.16 + R() * .34);
+      const rx = crown * (.28 + R() * .17), ry = rx * (.65 + R() * .34);
+      ctx.fillStyle = greens[Math.floor(R() * greens.length)];
+      ctx.beginPath(); ctx.ellipse(x + Math.cos(a) * d, y + Math.sin(a) * d * .78, rx, ry, a * .3, 0, TAU); ctx.fill();
+    }
+    /* Irregular outer edge breaks the perfect-circle game-art look. */
+    ctx.fillStyle = greens[1]; ctx.beginPath();
+    for (let k = 0; k < 18; k++) {
+      const a = k / 18 * TAU, d = crown * (.78 + R() * .2), px = x + Math.cos(a) * d, py = y + Math.sin(a) * d * .78;
+      if (!k) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = greens[2]; ctx.beginPath(); ctx.ellipse(x - crown * .22, y - crown * .2, crown * .42, crown * .3, -.45, 0, TAU); ctx.fill();
+    ctx.fillStyle = 'rgba(194,207,139,.22)'; ctx.beginPath(); ctx.ellipse(x - crown * .28, y - crown * .3, crown * .28, crown * .18, -.4, 0, TAU); ctx.fill();
+    ctx.fillStyle = 'rgba(12,37,24,.22)'; ctx.beginPath(); ctx.ellipse(x + crown * .2, y + crown * .25, crown * .56, crown * .34, .35, 0, TAU); ctx.fill();
   }
-  ctx.fillStyle = 'rgba(173,196,116,.24)'; ctx.beginPath(); ctx.ellipse(x - r * .28, y - r * .3, r * .34, r * .24, -.4, 0, TAU); ctx.fill();
-  ctx.strokeStyle = 'rgba(20,48,28,.28)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(x, y, r * .86, r * .7, 0, 0, TAU); ctx.stroke();
+  ctx.restore();
 }
 function treeOld(x, y, r) {
   ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.beginPath(); ctx.arc(x + 4, y + 5, r, 0, TAU); ctx.fill();
