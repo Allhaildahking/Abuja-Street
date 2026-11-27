@@ -55,7 +55,15 @@ body{margin:0;background:var(--ink);color:var(--text);font-family:var(--body);ov
 .ctl{position:absolute;left:14px;right:14px;bottom:max(14px,env(safe-area-inset-bottom));display:none;justify-content:space-between;align-items:flex-end;pointer-events:none;gap:12px}
 .ctl .grp{display:flex;gap:10px;align-items:flex-end}
 .ctl .col{display:flex;flex-direction:column;gap:9px}
-.ctl .steer-group{display:flex;gap:10px;align-items:flex-end}
+.ctl .steer-group{display:none}
+.wheel-wrap{pointer-events:auto;display:flex;flex-direction:column;align-items:center;gap:4px;touch-action:none;user-select:none;-webkit-user-select:none}
+#wheel{position:relative;width:148px;height:148px;border-radius:50%;border:0;padding:0;background:radial-gradient(circle at 50% 50%,#26312d 0 16%,#101714 17% 28%,#59615c 29% 34%,#141a17 35% 58%,#68716a 59% 64%,#171e1a 65% 100%);box-shadow:0 7px 20px #0009,inset 0 2px 5px #ffffff33;touch-action:none;transform:rotate(0deg)}
+#wheel:before{content:'';position:absolute;inset:9px;border:8px solid #929b92;border-left-color:#343d37;border-bottom-color:#343d37;border-radius:50%;box-shadow:inset 0 0 0 2px #0a0f0c,0 0 0 2px #080c0a}
+#wheel:after{content:'';position:absolute;left:50%;top:50%;width:82px;height:9px;border-radius:8px;background:linear-gradient(#b6beb5,#4b554e);transform:translate(-50%,-50%);box-shadow:0 0 0 2px #111914}
+.wheel-spoke{position:absolute;left:50%;top:50%;width:9px;height:47px;border-radius:7px;background:linear-gradient(90deg,#414b44,#a5afa5,#303a33);transform:translate(-50%,-100%);transform-origin:50% 100%;box-shadow:0 0 0 1px #0a100c}
+.wheel-hub{position:absolute;left:50%;top:50%;width:38px;height:38px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#758078,#252d28 70%);border:2px solid #a4ada4;transform:translate(-50%,-50%);z-index:2}
+.wheel-label{font:700 10px var(--display);letter-spacing:1.4px;color:#e6e9df;text-shadow:0 2px 4px #000;}
+@media(max-width:380px){#wheel{width:116px;height:116px}#wheel:after{width:65px} .wheel-spoke{height:37px}}
 .b{pointer-events:auto;touch-action:none;user-select:none;-webkit-user-select:none;display:grid;place-items:center;border-radius:50%;border:2px solid rgba(255,255,255,.48);background:rgba(10,16,13,.76);color:var(--text);font-family:var(--display);font-weight:700;letter-spacing:.8px;font-size:17px;width:76px;height:76px;box-shadow:0 5px 16px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.12);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
 .b.gas{width:94px;height:94px;background:rgba(25,153,78,.88);border-color:rgba(180,255,205,.85);font-size:19px}
 .b.brake{width:76px;height:76px;background:rgba(180,48,48,.76);border-color:rgba(255,180,180,.7)}
@@ -100,10 +108,7 @@ h1 em{font-style:normal;color:var(--green)}
   <div class="ctl">
     <div class="col">
       <button class="chip" id="auto" aria-pressed="false">Auto gas: off</button>
-      <div class="steer-group" aria-label="Steering controls">
-        <button class="b" data-k="l" aria-label="Steer left">◀</button>
-        <button class="b" data-k="r" aria-label="Steer right">▶</button>
-      </div>
+      <div class="wheel-wrap"><button id="wheel" type="button" aria-label="Virtual steering wheel"><span class="wheel-spoke"></span><span class="wheel-hub"></span></button><span class="wheel-label">STEERING</span></div>
     </div>
     <div class="grp">
       <div class="col">
@@ -122,7 +127,7 @@ h1 em{font-style:normal;color:var(--green)}
       <h1>Abuja <em>Streets</em></h1>
       <p>Welcome to the FCT. Explore a growing open city inspired by Abuja: from the high-rises of Maitama and the busy streets of Wuse to Garki, Jabi, Gwarinpa and the hills beyond. Take jobs, earn cash, build your name and watch the city come alive after dark.</p>
       <div class="keys">
-        <b>Phone</b><span>Hold the left and right buttons to steer. Hold GAS to accelerate, BRAKE to slow or reverse. Nitro and drift are separate buttons.</span>
+        <b>Phone</b><span>Drag the virtual steering wheel left or right. Hold GAS to accelerate, BRAKE to slow or reverse. Nitro and drift are separate buttons.</span>
         <b>Keyboard</b><span>WASD or arrows. Shift boosts with nitro. Space drifts. N skips a fare.</span>
         <b>Gamepad</b><span>Left stick steers, triggers or A/B for gas and brake, X drifts.</span>
         <b>Careful</b><span>Ram traffic and the police come for you. Stop still beside them and you get busted.</span>
@@ -280,11 +285,11 @@ const TARGETS = LM.filter(l => l.go);
 const NAMES = ['Chidi', 'Aisha', 'Tunde', 'Ngozi', 'Musa', 'Funke', 'Emeka', 'Halima', 'Bola', 'Ibrahim', 'Zainab', 'Kelechi'];
 
 /* ---------- cars ---------- */
-const PP = { accel: 520, brake: 900, rev: 240, drag: .85, grip: 6.5, turn: 2.7, max: 500 };
+const PP = { accel: 500, brake: 1050, rev: 220, drag: .85, grip: 7.2, turn: 2.05, max: 470 };
 const CP = { accel: 560, brake: 900, rev: 260, drag: .85, grip: 6, turn: 2.6, max: 540 };
 const P = { x: 4.5 * G, y: 5 * G + LANE, a: 0, vx: 0, vy: 0, vF: 0, vR: 0, p: PP, brake: false, thr: 0, hp: 100, steer: 0, gas: false };
 const traffic = [], cops = [], marks = [], parts = [];
-const keys = {}, touch = {}, steerPad = { active: false, v: 0 };
+const keys = {}, touch = {}, steerPad = { active: false, v: 0, angle: 0, last: 0 };
 let autoGas = false;
 const buzz = ms => { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (_) { } };
 let time = 0, tod = 9.5, shake = 0, muted = false, running = false, heat = 0, cash = 5000, mission = null, nextAt = 0, bustT = 0, copTimer = 0, prevStars = 0, driftT = 0, driftPeak = 0, nitro = 100, boosting = false, damageT = 0;
@@ -298,14 +303,16 @@ function stepCar(c, thr, str, hb, dt) {
   const sp0 = Math.abs(vF);
   vF -= (vF * .22 + vF * sp0 * .00145) * dt;            /* rolling resistance plus air drag */
   if (Math.abs(thr) < .05) vF -= vF * .5 * dt;           /* engine braking */
-  let gr = p.grip * (1 - .3 * Math.abs(str) * Math.min(1, sp0 / 450));   /* hard cornering loosens the tyres */
-  if (thr < 0 && vF > 200) gr *= .7;                      /* heavy braking skids */
-  vR *= Math.exp(-(hb ? 1.5 : gr) * dt);
-  if (hb) vF -= vF * .9 * dt;
+  let gr = p.grip * (1 - .22 * Math.abs(str) * Math.min(1, sp0 / 420));
+  if (thr < 0 && vF > 190) gr *= .78;
+  vR *= Math.exp(-(hb ? 1.15 : gr) * dt);
+  if (hb) vF -= vF * .72 * dt;
   c.vx = fx * vF + rx * vR; c.vy = fy * vF + ry * vR;
   const sp = Math.abs(vF);
-  const auth = Math.min(1, sp / 160) * (1 - .4 * Math.min(1, sp / p.max)) * (hb ? 1.35 : 1);
-  c.a += str * p.turn * auth * (vF >= 0 ? 1 : -1) * dt;
+  /* Progressive steering: responsive at city speeds, calmer at highway speed. */
+  const speedFactor = Math.min(1, sp / 78) * (1 - .48 * Math.min(1, sp / p.max));
+  const driftFactor = hb ? 1.22 : 1;
+  c.a += str * p.turn * speedFactor * driftFactor * (vF >= 0 ? 1 : -1) * dt;
   c.x += c.vx * dt; c.y += c.vy * dt;
   c.vF = vF; c.vR = vR;
 }
@@ -543,7 +550,7 @@ function thud(v) {
 function updatePlayer(dt) {
   damageT = Math.max(0, damageT - dt);
   const k = keys;
-  let tstr = (k.right || touch.r ? 1 : 0) - (k.left || touch.l ? 1 : 0), rate = 9, gas = !!(k.up || touch.g || autoGas), brk = !!(k.down || touch.b), hb = !!(k.hb || touch.h);
+  let tstr = steerPad.active ? steerPad.v : (k.right || touch.r ? 1 : 0) - (k.left || touch.l ? 1 : 0), rate = 12, gas = !!(k.up || touch.g || autoGas), brk = !!(k.down || touch.b), hb = !!(k.hb || touch.h);
   try {
     const pads = navigator.getGamepads ? navigator.getGamepads() : [];
     const gp = [...pads].find(x => x && x.connected);
@@ -555,7 +562,7 @@ function updatePlayer(dt) {
     }
   } catch (_) { }
   const thr = brk ? -1 : gas ? 1 : 0; P.gas = gas && !brk;
-  const sr = (tstr === 0 ? rate * 1.5 : rate) * dt;
+  const sr = (tstr === 0 ? 10 : rate) * dt;
   P.steer = (P.steer || 0) + clamp(tstr - (P.steer || 0), -sr, sr);
   stepCar(P, thr, P.steer, hb, dt);
   boosting = !!((keys.shift || touch.n) && nitro > 0 && Math.abs(P.vF) > 65 && !brk);
@@ -1240,13 +1247,19 @@ function hud() {
 const KEYMAP = { ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down', ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right', Space: 'hb', ShiftLeft: 'shift', ShiftRight: 'shift' };
 window.addEventListener('keydown', e => { const k = KEYMAP[e.code]; if (k) { keys[k] = true; e.preventDefault(); } if (e.code === 'KeyN') skipMission(); if (e.code === 'Enter' && !running) start(); });
 window.addEventListener('keyup', e => { const k = KEYMAP[e.code]; if (k) { keys[k] = false; e.preventDefault(); } });
-window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; for (const k in touch) touch[k] = false; });
+window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; for (const k in touch) touch[k] = false; steerPad.active = false; steerPad.v = 0; steerPad.angle = 0; $('wheel').style.transform = 'rotate(0deg)'; });
 document.querySelectorAll('[data-k]').forEach(b => {
   const k = b.dataset.k;
   const on = e => { e.preventDefault(); touch[k] = true; b.classList.add('on'); try { b.setPointerCapture(e.pointerId); } catch (_) { } };
   const off = () => { touch[k] = false; b.classList.remove('on'); };
   b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off); b.addEventListener('pointercancel', off); b.addEventListener('lostpointercapture', off);
 });
+const wheel = $('wheel');
+function wheelPointerAngle(e) { const r = wheel.getBoundingClientRect(); return Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2)); }
+function wheelDown(e) { e.preventDefault(); steerPad.active = true; steerPad.last = wheelPointerAngle(e); try { wheel.setPointerCapture(e.pointerId); } catch (_) {} }
+function wheelMove(e) { if (!steerPad.active) return; e.preventDefault(); const a = wheelPointerAngle(e); let d = a - steerPad.last; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; steerPad.last = a; steerPad.angle = clamp(steerPad.angle + d, -2.35, 2.35); steerPad.v = clamp(steerPad.angle / 1.65, -1, 1); wheel.style.transform = `rotate(${steerPad.angle * 57.2958}deg)`; }
+function wheelUp(e) { if (!steerPad.active) return; steerPad.active = false; steerPad.v = 0; steerPad.angle = 0; wheel.style.transition = 'transform .16s ease-out'; wheel.style.transform = 'rotate(0deg)'; setTimeout(() => { wheel.style.transition = ''; }, 180); }
+wheel.addEventListener('pointerdown', wheelDown); wheel.addEventListener('pointermove', wheelMove); wheel.addEventListener('pointerup', wheelUp); wheel.addEventListener('pointercancel', wheelUp); wheel.addEventListener('lostpointercapture', wheelUp);
 document.querySelector('.ctl').addEventListener('contextmenu', e => e.preventDefault());
 /* Direction buttons use the same hold-to-steer input as keyboard arrows. */
 /* auto gas: keep the cab rolling, just steer and brake */
