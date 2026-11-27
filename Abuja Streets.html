@@ -52,21 +52,20 @@ body{margin:0;background:var(--ink);color:var(--text);font-family:var(--body);ov
 #toast.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
 #toast.good{color:#7ff0ad}#toast.bad{color:#ff7b7f}
 .hint{position:absolute;left:0;right:0;bottom:12px;text-align:center;font-size:12px;color:rgba(255,255,255,.8);text-shadow:0 1px 3px rgba(0,0,0,.9);pointer-events:none}
-.ctl{position:absolute;left:16px;right:16px;bottom:16px;display:none;justify-content:space-between;align-items:flex-end;pointer-events:none}
-.ctl .grp{display:flex;gap:8px;align-items:flex-end}
-.ctl .col{display:flex;flex-direction:column;gap:8px}
-.b{pointer-events:auto;touch-action:none;display:grid;place-items:center;border-radius:50%;border:2px solid rgba(255,255,255,.4);background:rgba(10,16,13,.55);color:var(--text);font-family:var(--display);font-weight:700;letter-spacing:1px;font-size:18px;width:70px;height:70px;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
-.b.gas{width:88px;height:88px;background:rgba(34,169,91,.6);border-color:rgba(255,255,255,.6)}
-.b.sm{width:58px;height:58px;font-size:12px;letter-spacing:.3px}
-.b.on{background:rgba(255,255,255,.4)}
-.steer{pointer-events:auto;touch-action:none;position:relative;width:176px;height:80px;border-radius:40px;border:2px solid rgba(255,255,255,.4);background:rgba(10,16,13,.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
-.steer .arr{position:absolute;top:50%;transform:translateY(-50%);font-size:18px;color:rgba(255,255,255,.55)}
-.steer .arr.l{left:14px}.steer .arr.r{right:14px}
-.knob{position:absolute;top:50%;left:50%;width:60px;height:60px;margin:-30px 0 0 -30px;border-radius:50%;background:rgba(255,255,255,.3);border:2px solid rgba(255,255,255,.85)}
-.steer.on .knob{background:rgba(34,169,91,.7)}
-.chip{pointer-events:auto;align-self:flex-start;font:600 12px var(--body);letter-spacing:.3px;color:var(--text);background:rgba(10,16,13,.6);border:1px solid rgba(255,255,255,.4);border-radius:14px;padding:5px 10px}
-.chip[aria-pressed="true"]{background:rgba(34,169,91,.75);border-color:#fff}
+.ctl{position:absolute;left:14px;right:14px;bottom:max(14px,env(safe-area-inset-bottom));display:none;justify-content:space-between;align-items:flex-end;pointer-events:none;gap:12px}
+.ctl .grp{display:flex;gap:10px;align-items:flex-end}
+.ctl .col{display:flex;flex-direction:column;gap:9px}
+.ctl .steer-group{display:flex;gap:10px;align-items:flex-end}
+.b{pointer-events:auto;touch-action:none;user-select:none;-webkit-user-select:none;display:grid;place-items:center;border-radius:50%;border:2px solid rgba(255,255,255,.48);background:rgba(10,16,13,.76);color:var(--text);font-family:var(--display);font-weight:700;letter-spacing:.8px;font-size:17px;width:76px;height:76px;box-shadow:0 5px 16px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.12);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
+.b.gas{width:94px;height:94px;background:rgba(25,153,78,.88);border-color:rgba(180,255,205,.85);font-size:19px}
+.b.brake{width:76px;height:76px;background:rgba(180,48,48,.76);border-color:rgba(255,180,180,.7)}
+.b.sm{width:58px;height:58px;font-size:11px;letter-spacing:.2px}
+.b.on{transform:scale(.94);background:rgba(242,182,50,.85);border-color:#fff;box-shadow:0 0 0 4px rgba(242,182,50,.18)}
+.steer{display:none}
+.chip{pointer-events:auto;align-self:flex-start;font:600 12px var(--body);letter-spacing:.3px;color:var(--text);background:rgba(10,16,13,.72);border:1px solid rgba(255,255,255,.45);border-radius:14px;padding:6px 11px}
+.chip[aria-pressed="true"]{background:rgba(34,169,91,.85);border-color:#fff}
 @media (pointer:coarse),(max-width:700px){.ctl{display:flex}.hint{display:none}}
+@media(max-width:380px){.ctl{left:9px;right:9px;gap:6px}.ctl .grp{gap:6px}.ctl .col{gap:7px}.ctl .steer-group{gap:6px}.b{width:64px;height:64px;font-size:15px}.b.gas{width:78px;height:78px}.b.brake{width:64px;height:64px}.b.sm{width:50px;height:50px;font-size:10px}}
 .intro{position:absolute;inset:0;display:grid;place-items:center;padding:16px;background:rgba(8,12,10,.8);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);overflow:auto}
 .intro.off{display:none}
 .card{max-width:460px;width:100%;display:flex;flex-direction:column;gap:14px}
@@ -101,18 +100,20 @@ h1 em{font-style:normal;color:var(--green)}
   <div class="ctl">
     <div class="col">
       <button class="chip" id="auto" aria-pressed="false">Auto gas: off</button>
-      <div class="steer" id="steer" aria-label="Steering pad. Slide left or right">
-        <span class="arr l">◀</span><span class="arr r">▶</span>
-        <div class="knob" id="knob"></div>
+      <div class="steer-group" aria-label="Steering controls">
+        <button class="b" data-k="l" aria-label="Steer left">◀</button>
+        <button class="b" data-k="r" aria-label="Steer right">▶</button>
       </div>
     </div>
     <div class="grp">
       <div class="col">
         <button class="b sm" data-k="n">NITRO</button>
         <button class="b sm" data-k="h">DRIFT</button>
-        <button class="b sm" data-k="b">BRAKE</button>
       </div>
-      <button class="b gas" data-k="g">GAS</button>
+      <div class="col">
+        <button class="b brake" data-k="b">BRAKE</button>
+        <button class="b gas" data-k="g">GAS</button>
+      </div>
     </div>
   </div>
   <div class="intro" id="intro">
@@ -121,7 +122,7 @@ h1 em{font-style:normal;color:var(--green)}
       <h1>Abuja <em>Streets</em></h1>
       <p>Welcome to the FCT. Explore a growing open city inspired by Abuja: from the high-rises of Maitama and the busy streets of Wuse to Garki, Jabi, Gwarinpa and the hills beyond. Take jobs, earn cash, build your name and watch the city come alive after dark.</p>
       <div class="keys">
-        <b>Phone</b><span>Slide the knob to steer, smoothly. Gas and brake on the right. Turn on Auto gas to keep rolling.</span>
+        <b>Phone</b><span>Hold the left and right buttons to steer. Hold GAS to accelerate, BRAKE to slow or reverse. Nitro and drift are separate buttons.</span>
         <b>Keyboard</b><span>WASD or arrows. Shift boosts with nitro. Space drifts. N skips a fare.</span>
         <b>Gamepad</b><span>Left stick steers, triggers or A/B for gas and brake, X drifts.</span>
         <b>Careful</b><span>Ram traffic and the police come for you. Stop still beside them and you get busted.</span>
@@ -541,8 +542,7 @@ function thud(v) {
 function updatePlayer(dt) {
   damageT = Math.max(0, damageT - dt);
   const k = keys;
-  let tstr = (k.right ? 1 : 0) - (k.left ? 1 : 0), rate = 7, gas = !!(k.up || touch.g || autoGas), brk = !!(k.down || touch.b), hb = !!(k.hb || touch.h);
-  if (steerPad.active) { tstr = steerPad.v; rate = 16; }
+  let tstr = (k.right || touch.r ? 1 : 0) - (k.left || touch.l ? 1 : 0), rate = 9, gas = !!(k.up || touch.g || autoGas), brk = !!(k.down || touch.b), hb = !!(k.hb || touch.h);
   try {
     const pads = navigator.getGamepads ? navigator.getGamepads() : [];
     const gp = [...pads].find(x => x && x.connected);
@@ -1247,18 +1247,7 @@ document.querySelectorAll('[data-k]').forEach(b => {
   b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off); b.addEventListener('pointercancel', off); b.addEventListener('lostpointercapture', off);
 });
 document.querySelector('.ctl').addEventListener('contextmenu', e => e.preventDefault());
-/* analog steering pad: slide the knob, release to centre */
-const padEl = $('steer'), knob = $('knob');
-function padSet(e) {
-  const r = padEl.getBoundingClientRect(), travel = r.width / 2 - 34;
-  let v = (e.clientX - (r.left + r.width / 2)) / travel; v = clamp(v, -1, 1);
-  if (Math.abs(v) < .06) v = 0;
-  steerPad.v = v; knob.style.transform = `translateX(${v * travel}px)`;
-}
-function padEnd() { steerPad.active = false; steerPad.v = 0; knob.style.transform = ''; padEl.classList.remove('on'); }
-padEl.addEventListener('pointerdown', e => { e.preventDefault(); steerPad.active = true; padEl.classList.add('on'); try { padEl.setPointerCapture(e.pointerId); } catch (_) { } padSet(e); });
-padEl.addEventListener('pointermove', e => { if (steerPad.active) padSet(e); });
-['pointerup', 'pointercancel', 'lostpointercapture'].forEach(t => padEl.addEventListener(t, padEnd));
+/* Direction buttons use the same hold-to-steer input as keyboard arrows. */
 /* auto gas: keep the cab rolling, just steer and brake */
 const autoBtn = $('auto');
 try { autoGas = localStorage.getItem('abuja-auto') === '1'; } catch (_) { }
